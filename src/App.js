@@ -440,7 +440,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
   const dots=[...new Set(nutrition.map(n=>n.date))];
 
   function pick(f){setSel(f);setQty(f.baseAmount||f.base_amount||1);setSearch(f.name);}
-  async function addSel(){if(!sel)return;setSaving(true);const s=scaleFood(sel,qty);await addNutrition({name:sel.name,...s,meal,date:selDate,baseFood:sel.name,quantity:qty,unit:sel.unit});setSearch("");setSel(null);setQty(1);setSaving(false);}
+  async function addSel(){if(!sel)return;setSaving(true);const s=scaleFood(sel,qty);await addNutrition({name:sel.name,...s,meal,date:selDate,baseFood:sel.name,quantity:+(+qty).toFixed(sel.unit==="g"||sel.unit==="ml"?1:0),unit:sel.unit});setSearch("");setSel(null);setQty(1);setSaving(false);}
   async function saveCustom(){if(!custom.name||!custom.kcal)return;setSaving(true);const food={name:custom.name,unit:custom.unit||"g",baseAmount:+custom.baseAmount||100,kcal:+custom.kcal,protein:+custom.protein||0,carbs:+custom.carbs||0,fat:+custom.fat||0};const saved=await addCustomFood(food);if(saved){const amt=+custom.amount||food.baseAmount;const f=amt/food.baseAmount;await addNutrition({name:food.name,kcal:food.kcal*f,protein:food.protein*f,carbs:food.carbs*f,fat:food.fat*f,meal,date:selDate,quantity:amt,unit:food.unit});}setCustom({name:"",kcal:"",protein:"",carbs:"",fat:"",unit:"g",baseAmount:"100",amount:"100"});setShowCustom(false);setSaving(false);}
 
   return(
@@ -487,7 +487,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
             <span style={{fontSize:13,color:"#0f6e56",fontWeight:500,flex:"1 1 100%"}}>{sel.name}</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:13,color:"#0f6e56"}}>Količina:</span>
-              <input type="number" className="qty-inp" value={qty} onChange={e=>setQty(Math.max(0.1,+e.target.value))} min="0.1" step={sel.unit==="g"||sel.unit==="ml"?10:1} inputMode="decimal"/>
+              {(()=>{const isWeight=sel.unit==="g"||sel.unit==="ml";return<input type="number" className="qty-inp" value={qty} onChange={e=>setQty(Math.max(isWeight?1:1,+e.target.value))} min={isWeight?"1":"1"} step={isWeight?10:1} inputMode={isWeight?"decimal":"numeric"}/>;})()}
               <span style={{fontSize:13,color:"#085041",fontWeight:500}}>{sel.unit}</span>
             </div>
             {sp&&<span style={{fontSize:12,color:"#0d5c43",fontWeight:500,flex:"1 1 100%"}}>{Math.round(sp.kcal)} kcal · {Math.round(sp.protein)}g P · {Math.round(sp.carbs)}g U · {Math.round(sp.fat)}g M</span>}
@@ -527,7 +527,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
             <div className="meal-bd">
               {items.map(item=>(
                 <div key={item.id} className="frow">
-                  <div><div style={{fontSize:14}}>{item.base_food||item.name}</div>{item.quantity&&<div style={{fontSize:11,color:"#aaa"}}>{item.quantity} {item.unit}</div>}</div>
+                  <div><div style={{fontSize:14}}>{item.base_food||item.name}</div>{item.quantity&&<div style={{fontSize:11,color:"#aaa"}}>{Number.isInteger(item.quantity)?item.quantity:+(+item.quantity).toFixed(1)} {item.unit}</div>}</div>
                   <div style={{display:"flex",gap:4,alignItems:"center"}}><span className="bx bc">{Math.round(item.kcal)} kcal</span><span className="bx bb">{Math.round(item.protein)}g P</span><button className="rm" onClick={()=>removeNutrition(item.id)}>×</button></div>
                 </div>
               ))}
