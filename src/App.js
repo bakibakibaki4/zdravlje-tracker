@@ -468,10 +468,23 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
           return out;
         };
 
-        const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=8&lc=hr&fields=product_name,product_name_hr,brands,nutriments`;
+        // USDA FoodData Central - besplatno, bez kljuca, generična hrana
+        const url=`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(search)}&dataType=SR%20Legacy,Foundation&pageSize=8&api_key=DEMO_KEY`;
         const r=await fetch(url,{signal:sig});
         const d=await r.json();
-        setApiResults(parseProducts(d.products).slice(0,8));
+        const items=(d.foods||[]).filter(f=>f.foodNutrients).map(f=>{
+          const get=(id)=>{const n=f.foodNutrients.find(n=>n.nutrientId===id||n.nutrientNumber===String(id));return n?Math.round((n.value||0)*10)/10:0;};
+          return{
+            name:f.description.charAt(0).toUpperCase()+f.description.slice(1).toLowerCase(),
+            unit:"g",baseAmount:100,
+            kcal:Math.round(get(1008)||get(208)||0),
+            protein:get(1003)||get(203)||0,
+            carbs:get(1005)||get(205)||0,
+            fat:get(1004)||get(204)||0,
+            _api:true,_brand:f.brandOwner||f.foodCategory||"",
+          };
+        }).filter(f=>f.kcal>0);
+        setApiResults(items.slice(0,8));
         setApiLoading(false);
       }catch(e){
         if(!sig.aborted){setApiResults([]);setApiLoading(false);}
@@ -534,7 +547,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
                   <div style={{fontSize:14,display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                     <span style={{wordBreak:"break-word"}}>{f.name}</span>
                     {f._custom&&<span style={{fontSize:10,color:"#854f0b",fontWeight:500,flexShrink:0}}>MOJ UNOS</span>}
-                    {f._api&&<span style={{fontSize:10,color:"#185fa5",fontWeight:500,flexShrink:0}}>OFF</span>}
+                    {f._api&&<span style={{fontSize:10,color:"#185fa5",fontWeight:500,flexShrink:0}}>USDA</span>}
                   </div>
                   <div style={{fontSize:11,color:"#aaa"}}>{f._brand?f._brand+" · ":""}per {f.baseAmount||f.base_amount}{f.unit}</div>
                 </div>
