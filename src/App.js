@@ -438,46 +438,46 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
   const localFiltered=search.length>1?allFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())).slice(0,4):[];
 
   React.useEffect(()=>{
-    if(search.length<2){setApiResults([]);return;}
+    if(search.length<2){setApiResults([]);setApiLoading(false);return;}
+    setApiLoading(true);
     clearTimeout(searchTimer.current);
+    // short debounce — show local results immediately, API after 250ms
     searchTimer.current=setTimeout(async()=>{
-      setApiLoading(true);
+      const ctrl=new AbortController();
+      const sig=ctrl.signal;
       try{
-        // Search both HR and EN simultaneously
-        const [r1,r2]=await Promise.all([
-          fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=6&lc=hr`).then(r=>r.json()),
-          fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=6&lc=en`).then(r=>r.json()),
-        ]);
-        const seen=new Set();
-        const parse=(products)=>(products||[]).filter(p=>{
-          const kcal=p.nutriments?.["energy-kcal_100g"]||p.nutriments?.["energy-kcal"];
-          if(!kcal||!p.product_name)return false;
-          const key=(p.product_name+kcal).toLowerCase();
-          if(seen.has(key))return false;
-          seen.add(key);
-          return true;
-        }).map(p=>({
-          name:p.product_name_hr||p.product_name_en||p.product_name,
-          unit:"g",baseAmount:100,
-          kcal:Math.round(p.nutriments["energy-kcal_100g"]||p.nutriments["energy-kcal"]||0),
-          protein:Math.round((p.nutriments.proteins_100g||0)*10)/10,
-          carbs:Math.round((p.nutriments.carbohydrates_100g||0)*10)/10,
-          fat:Math.round((p.nutriments.fat_100g||0)*10)/10,
-          _api:true,
-          _brand:p.brands||"",
-        }));
-        const combined=[...parse(r1.products),...parse(r2.products)];
-        // deduplicate again across both
-        const final=[];const seen2=new Set();
-        for(const f of combined){
-          const k=f.name.toLowerCase();
-          if(!seen2.has(k)){seen2.add(k);final.push(f);}
-        }
-        setApiResults(final.slice(0,8));
-      }catch(e){setApiResults([]);}
-      setApiLoading(false);
-    },500);
-    return()=>clearTimeout(searchTimer.current);
+        const parseProducts=(products)=>{
+          const seen=new Set();
+          const out=[];
+          for(const p of(products||[])){
+            const kcal=p.nutriments?.["energy-kcal_100g"]||p.nutriments?.["energy-kcal"]||0;
+            const name=p.product_name_hr||p.product_name_en||p.product_name||"";
+            if(!kcal||!name)continue;
+            const key=name.toLowerCase();
+            if(seen.has(key))continue;
+            seen.add(key);
+            out.push({
+              name,unit:"g",baseAmount:100,
+              kcal:Math.round(kcal),
+              protein:Math.round((p.nutriments.proteins_100g||0)*10)/10,
+              carbs:Math.round((p.nutriments.carbohydrates_100g||0)*10)/10,
+              fat:Math.round((p.nutriments.fat_100g||0)*10)/10,
+              _api:true,_brand:p.brands||"",
+            });
+          }
+          return out;
+        };
+
+        const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=8&lc=hr&fields=product_name,product_name_hr,brands,nutriments`;
+        const r=await fetch(url,{signal:sig});
+        const d=await r.json();
+        setApiResults(parseProducts(d.products).slice(0,8));
+        setApiLoading(false);
+      }catch(e){
+        if(!sig.aborted){setApiResults([]);setApiLoading(false);}
+      }
+    },250);
+    return()=>{clearTimeout(searchTimer.current);};
   },[search]);
 
   // merge: local first, then API (excluding duplicates)
@@ -523,7 +523,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
         <div className="pills">{MEALS.map(m=><button key={m} className={`pill${meal===m?" g":""}`} onClick={()=>setMeal(m)}>{MEAL_ICONS[m]} {m}</button>)}</div>
         <div className="div"/>
         <div style={{position:"relative"}}>
-          <input className="inp" placeholder="Pretraži hranu (HR/EN)..." value={search} onChange={e=>{setSearch(e.target.value);if(!e.target.value){setSel(null);setApiResults([]);};}} style={{paddingRight:apiLoading?40:14}}/>
+          <input className="inp" placeholder="Pretraži hranu (HR/EN)..." value={search} onChange={e=>{const v=e.target.value;setSearch(v);setApiResults([]);if(!v){setSel(null);setApiLoading(false);}};}} style={{paddingRight:apiLoading?40:14}}/>
           {apiLoading&&<div style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",width:16,height:16,border:"2px solid #e8e5df",borderTopColor:"#1d9e75",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>}
         </div>
         {filtered.length>0&&!sel&&(
