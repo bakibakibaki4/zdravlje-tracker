@@ -189,7 +189,13 @@ textarea.inp{resize:none;line-height:1.5;font-size:15px;}
 /* range */
 .rrow{margin-bottom:16px;}
 .rlbl{display:flex;justify-content:space-between;font-size:14px;color:#666;margin-bottom:8px;}
-input[type=range]{width:100%;height:28px;accent-color:#1d9e75;}
+input[type=range]{width:100%;height:6px;-webkit-appearance:none;appearance:none;border-radius:99px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid currentColor;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid currentColor;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+input[type=range].r-red{background:linear-gradient(to right,#d85a30 0%,#d85a30 var(--pct),#f0ede8 var(--pct),#f0ede8 100%);color:#d85a30;}
+input[type=range].r-amber{background:linear-gradient(to right,#ba7517 0%,#ba7517 var(--pct),#f0ede8 var(--pct),#f0ede8 100%);color:#ba7517;}
+input[type=range].r-green{background:linear-gradient(to right,#1d9e75 0%,#1d9e75 var(--pct),#f0ede8 var(--pct),#f0ede8 100%);color:#1d9e75;}
+input[type=range].r-blue{background:linear-gradient(to right,#378add 0%,#378add var(--pct),#f0ede8 var(--pct),#f0ede8 100%);color:#378add;}
 
 /* calendar */
 .cal-wrap{position:relative;margin-bottom:14px;}
@@ -598,10 +604,12 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
           💊 {form.loperamide?"✓ Uzeo sam Loperamid (Imodium)":"Uzeo sam Loperamid (Imodium)"}
         </button>
 
-        {[{k:"pain",l:"Bol",max:10,c:"#d85a30"},{k:"bloating",l:"Nadutost",max:10,c:"#ba7517"},{k:"energy",l:"Energija",max:5,c:"#1d9e75"},{k:"water",l:"Čaše vode",max:15,c:"#378add"}].map(({k,l,max,c})=>(
+        {[{k:"pain",l:"Bol",max:10,c:"#d85a30",cls:"r-red"},{k:"bloating",l:"Nadutost",max:10,c:"#ba7517",cls:"r-amber"},{k:"energy",l:"Energija",max:5,c:"#1d9e75",cls:"r-green"},{k:"water",l:"Čaše vode",max:15,c:"#378add",cls:"r-blue"}].map(({k,l,max,c,cls})=>(
           <div key={k} className="rrow">
             <div className="rlbl"><span>{l}</span><span style={{fontWeight:500,color:c}}>{form[k]}/{max}</span></div>
-            <input type="range" min={0} max={max} step={1} value={form[k]} onChange={e=>setForm({...form,[k]:+e.target.value})} style={{accentColor:c}}/>
+            <input type="range" className={cls} min={0} max={max} step={1} value={form[k]}
+              style={{"--pct":`${Math.round(form[k]/max*100)}%`}}
+              onChange={e=>setForm({...form,[k]:+e.target.value})}/>
           </div>
         ))}
 
