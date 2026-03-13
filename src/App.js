@@ -536,7 +536,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
         <div className="pills">{MEALS.map(m=><button key={m} className={`pill${meal===m?" g":""}`} onClick={()=>setMeal(m)}>{MEAL_ICONS[m]} {m}</button>)}</div>
         <div className="div"/>
         <div style={{position:"relative"}}>
-          <input className="inp" placeholder="Pretraži hranu (HR/EN)..." value={search} onChange={e=>{const v=e.target.value;setSearch(v);setApiResults([]);if(!v){setSel(null);setApiLoading(false);}}}} style={{paddingRight:apiLoading?40:14}}/>
+          <input className="inp" placeholder="Pretraži hranu (HR/EN)..." value={search} onChange={e=>{const v=e.target.value;setSearch(v);setApiResults([]);if(!v){setSel(null);setApiLoading(false);}}} style={{paddingRight:apiLoading?40:14}}/>
           {apiLoading&&<div style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",width:16,height:16,border:"2px solid #e8e5df",borderTopColor:"#1d9e75",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>}
         </div>
         {filtered.length>0&&!sel&&(
