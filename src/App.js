@@ -178,6 +178,7 @@ textarea.inp{resize:none;line-height:1.5;font-size:15px;}
 /* qty row */
 .qty-row{margin-top:10px;padding:14px;background:#e1f5ee;border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;animation:si .2s ease;}
 @keyframes si{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
 .qty-inp{width:80px;padding:9px 10px;border:2px solid #1d9e75;border-radius:10px;font-size:16px;background:#fff;color:#0f6e56;font-weight:500;outline:none;text-align:center;-webkit-appearance:none;}
 
 /* meal sections */
@@ -430,8 +431,58 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
   const [saving,setSaving]=useState(false);
   const [goal,setGoal]=useState(()=>{try{return+localStorage.getItem("kcal_goal")||2000;}catch{return 2000;}});
 
+  const [apiResults,setApiResults]=useState([]);
+  const [apiLoading,setApiLoading]=useState(false);
+  const searchTimer=React.useRef(null);
   const allFoods=[...BUILTIN_FOODS,...customFoods.map(cf=>({...cf,_custom:true}))];
-  const filtered=search.length>1?allFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())).slice(0,6):[];
+  const localFiltered=search.length>1?allFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())).slice(0,4):[];
+
+  React.useEffect(()=>{
+    if(search.length<2){setApiResults([]);return;}
+    clearTimeout(searchTimer.current);
+    searchTimer.current=setTimeout(async()=>{
+      setApiLoading(true);
+      try{
+        // Search both HR and EN simultaneously
+        const [r1,r2]=await Promise.all([
+          fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=6&lc=hr`).then(r=>r.json()),
+          fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(search)}&search_simple=1&action=process&json=1&page_size=6&lc=en`).then(r=>r.json()),
+        ]);
+        const seen=new Set();
+        const parse=(products)=>(products||[]).filter(p=>{
+          const kcal=p.nutriments?.["energy-kcal_100g"]||p.nutriments?.["energy-kcal"];
+          if(!kcal||!p.product_name)return false;
+          const key=(p.product_name+kcal).toLowerCase();
+          if(seen.has(key))return false;
+          seen.add(key);
+          return true;
+        }).map(p=>({
+          name:p.product_name_hr||p.product_name_en||p.product_name,
+          unit:"g",baseAmount:100,
+          kcal:Math.round(p.nutriments["energy-kcal_100g"]||p.nutriments["energy-kcal"]||0),
+          protein:Math.round((p.nutriments.proteins_100g||0)*10)/10,
+          carbs:Math.round((p.nutriments.carbohydrates_100g||0)*10)/10,
+          fat:Math.round((p.nutriments.fat_100g||0)*10)/10,
+          _api:true,
+          _brand:p.brands||"",
+        }));
+        const combined=[...parse(r1.products),...parse(r2.products)];
+        // deduplicate again across both
+        const final=[];const seen2=new Set();
+        for(const f of combined){
+          const k=f.name.toLowerCase();
+          if(!seen2.has(k)){seen2.add(k);final.push(f);}
+        }
+        setApiResults(final.slice(0,8));
+      }catch(e){setApiResults([]);}
+      setApiLoading(false);
+    },500);
+    return()=>clearTimeout(searchTimer.current);
+  },[search]);
+
+  // merge: local first, then API (excluding duplicates)
+  const localNames=new Set(localFiltered.map(f=>f.name.toLowerCase()));
+  const filtered=[...localFiltered,...apiResults.filter(f=>!localNames.has(f.name.toLowerCase()))];
   const dayItems=nutrition.filter(n=>n.date===selDate);
   const tot=dayItems.reduce((a,n)=>({kcal:a.kcal+n.kcal,protein:a.protein+n.protein,carbs:a.carbs+n.carbs,fat:a.fat+n.fat}),{kcal:0,protein:0,carbs:0,fat:0});
   const pct=Math.min(100,Math.round((tot.kcal/goal)*100));
@@ -471,15 +522,30 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
         <span className="lbl">Obrok</span>
         <div className="pills">{MEALS.map(m=><button key={m} className={`pill${meal===m?" g":""}`} onClick={()=>setMeal(m)}>{MEAL_ICONS[m]} {m}</button>)}</div>
         <div className="div"/>
-        <input className="inp" placeholder="Pretraži hranu..." value={search} onChange={e=>{setSearch(e.target.value);if(!e.target.value)setSel(null);}}/>
+        <div style={{position:"relative"}}>
+          <input className="inp" placeholder="Pretraži hranu (HR/EN)..." value={search} onChange={e=>{setSearch(e.target.value);if(!e.target.value){setSel(null);setApiResults([]);};}} style={{paddingRight:apiLoading?40:14}}/>
+          {apiLoading&&<div style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",width:16,height:16,border:"2px solid #e8e5df",borderTopColor:"#1d9e75",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>}
+        </div>
         {filtered.length>0&&!sel&&(
           <div className="sugg">
             {filtered.map((f,i)=>(
               <div key={i} className={`sugg-row${f._custom?" mine":""}`} onClick={()=>pick(f)}>
-                <div><div style={{fontSize:14}}>{f.name}{f._custom&&<span style={{fontSize:10,color:"#854f0b",marginLeft:6,fontWeight:500}}>MOJ UNOS</span>}</div><div style={{fontSize:11,color:"#aaa"}}>per {f.baseAmount||f.base_amount}{f.unit}</div></div>
-                <div style={{display:"flex",gap:4}}><span className="bx bc">{f.kcal} kcal</span><span className="bx bb">{f.protein}g P</span></div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                    <span style={{wordBreak:"break-word"}}>{f.name}</span>
+                    {f._custom&&<span style={{fontSize:10,color:"#854f0b",fontWeight:500,flexShrink:0}}>MOJ UNOS</span>}
+                    {f._api&&<span style={{fontSize:10,color:"#185fa5",fontWeight:500,flexShrink:0}}>OFF</span>}
+                  </div>
+                  <div style={{fontSize:11,color:"#aaa"}}>{f._brand?f._brand+" · ":""}per {f.baseAmount||f.base_amount}{f.unit}</div>
+                </div>
+                <div style={{display:"flex",gap:4,flexShrink:0}}><span className="bx bc">{f.kcal} kcal</span><span className="bx bb">{f.protein}g P</span></div>
               </div>
             ))}
+          </div>
+        )}
+        {search.length>1&&!apiLoading&&filtered.length===0&&!sel&&(
+          <div style={{padding:"12px 14px",fontSize:13,color:"#aaa",textAlign:"center",background:"#fafaf8",borderRadius:12,border:"1px solid #e8e5df",marginTop:6}}>
+            Nema rezultata za "{search}"
           </div>
         )}
         {sel&&(
