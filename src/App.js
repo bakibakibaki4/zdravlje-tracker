@@ -399,7 +399,8 @@ function useData(uid) {
   }
   async function removeDigestion(id){await sb.from("digestion").delete().eq("id",id);setDigestion(p=>p.filter(x=>x.id!==id));}
   async function addCustomFood(food){
-    const{data:d}=await sb.from("custom_foods").insert({user_id:uid,name:food.name,unit:food.unit,base_amount:food.baseAmount,kcal:food.kcal,protein:food.protein||0,carbs:food.carbs||0,fat:food.fat||0}).select().single();
+    const{data:d,error}=await sb.from("custom_foods").insert({user_id:uid,name:food.name,unit:food.unit,base_amount:food.baseAmount,kcal:food.kcal,protein:food.protein||0,carbs:food.carbs||0,fat:food.fat||0}).select().single();
+    if(error){console.error("addCustomFood error:",error);return{error:error.message};}
     if(d){const cf={...d,baseAmount:d.base_amount};setCustomFoods(p=>[cf,...p]);return cf;}
     return null;
   }
@@ -429,6 +430,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
   const [custom,setCustom]=useState({name:"",kcal:"",protein:"",carbs:"",fat:"",unit:"g",baseAmount:"100",amount:"100"});
   const [showCustom,setShowCustom]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [customErr,setCustomErr]=useState(null);
   const [goal,setGoal]=useState(()=>{try{return+localStorage.getItem("kcal_goal")||2000;}catch{return 2000;}});
 
   const [apiResults,setApiResults]=useState([]);
@@ -505,7 +507,21 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
 
   function pick(f){setSel(f);setQty(f.baseAmount||f.base_amount||1);setSearch(f.name);}
   async function addSel(){if(!sel)return;setSaving(true);const s=scaleFood(sel,qty);await addNutrition({name:sel.name,...s,meal,date:selDate,baseFood:sel.name,quantity:+(+qty).toFixed(sel.unit==="g"||sel.unit==="ml"?1:0),unit:sel.unit});setSearch("");setSel(null);setQty(1);setSaving(false);}
-  async function saveCustom(){if(!custom.name||!custom.kcal)return;setSaving(true);const food={name:custom.name,unit:custom.unit||"g",baseAmount:+custom.baseAmount||100,kcal:+custom.kcal,protein:+custom.protein||0,carbs:+custom.carbs||0,fat:+custom.fat||0};const saved=await addCustomFood(food);if(saved){const amt=+custom.amount||food.baseAmount;const f=amt/food.baseAmount;await addNutrition({name:food.name,kcal:food.kcal*f,protein:food.protein*f,carbs:food.carbs*f,fat:food.fat*f,meal,date:selDate,quantity:amt,unit:food.unit});}setCustom({name:"",kcal:"",protein:"",carbs:"",fat:"",unit:"g",baseAmount:"100",amount:"100"});setShowCustom(false);setSaving(false);}
+  async function saveCustom(){
+    if(!custom.name||!custom.kcal){setCustomErr("Naziv i kcal su obavezni.");return;}
+    setCustomErr(null);setSaving(true);
+    const food={name:custom.name,unit:custom.unit||"g",baseAmount:+custom.baseAmount||100,kcal:+custom.kcal,protein:+custom.protein||0,carbs:+custom.carbs||0,fat:+custom.fat||0};
+    const saved=await addCustomFood(food);
+    if(saved&&saved.error){setCustomErr("Greška: "+saved.error);setSaving(false);return;}
+    if(saved){
+      const amt=+custom.amount||food.baseAmount;
+      const f=amt/food.baseAmount;
+      await addNutrition({name:food.name,kcal:food.kcal*f,protein:food.protein*f,carbs:food.carbs*f,fat:food.fat*f,meal,date:selDate,quantity:amt,unit:food.unit});
+      setCustom({name:"",kcal:"",protein:"",carbs:"",fat:"",unit:"g",baseAmount:"100",amount:"100"});
+      setShowCustom(false);
+    }
+    setSaving(false);
+  }
 
   return(
     <div>
@@ -591,7 +607,8 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
                 <div key={k}><span className="lbl">{l}</span><input type="number" className="inp" inputMode="decimal" value={custom[k]} onChange={e=>setCustom({...custom,[k]:e.target.value})}/></div>
               ))}
             </div>
-            <button className="btn btn-g" style={{opacity:saving?0.6:1}} onClick={saveCustom} disabled={saving}>Spremi i dodaj</button>
+            {customErr&&<div style={{padding:"10px 12px",borderRadius:10,background:"#3a1a1a",color:"#f5c4b3",fontSize:13,marginBottom:10}}>{customErr}</div>}
+            <button className="btn btn-g" style={{opacity:saving?0.6:1}} onClick={saveCustom} disabled={saving}>{saving?"Spremanje...":"Spremi i dodaj"}</button>
           </div>
         )}
       </div>
