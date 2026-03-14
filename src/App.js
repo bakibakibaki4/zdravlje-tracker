@@ -122,9 +122,14 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
   .zt-hdr{display:none;}
 }
 
-/* desktop panel hidden on mobile */
+/* mobile/desktop switch */
+.zt-mobile-wrap{display:flex;flex-direction:column;min-height:100dvh;background:#f5f3ef;}
 .zt-desktop{display:none!important;}
-@media(min-width:900px){.zt-desktop{display:flex!important;}.zt-hdr{display:none!important;}.zt-body{padding:24px 32px 48px;}}
+@media(min-width:900px){
+  .zt-mobile-wrap{display:none!important;}
+  .zt-desktop{display:flex!important;min-height:100dvh;}
+  .zt-body{padding:24px 32px 48px;max-width:680px;}
+}
 
 /* mobile header - hidden on desktop */
 .zt-hdr{background:#1a1a18;padding:env(safe-area-inset-top,0) 0 0;position:sticky;top:0;z-index:50;}
@@ -1192,47 +1197,45 @@ export default function App(){
     <>
       <style>{CSS}</style>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-      <div className="zt-root">
-        <div className="zt">
-          {/* Mobile header */}
-          <div className="zt-hdr">
-            <div className="zt-hdr-in">
-              <div className="zt-logo">Zdravlje <em>Tracker</em></div>
-              <button className="pill dk" style={{fontSize:11,padding:"6px 12px"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
-            </div>
-            <div className="zt-tabbar">
-              {tabs.map(t=><button key={t.id} className={`zt-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.icon} {t.l}</button>)}
-            </div>
+
+      {/* MOBILE layout */}
+      <div className="zt-mobile-wrap">
+        <div className="zt-hdr">
+          <div className="zt-hdr-in">
+            <div className="zt-logo">Zdravlje <em>Tracker</em></div>
+            <button className="pill dk" style={{fontSize:11,padding:"6px 12px"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
           </div>
-
-          {/* Desktop layout */}
-          <div className="zt-desktop">
-            <div className="zt-sidebar">
-              <div className="zt-sidebar-logo">
-                <div className="zt-logo">Zdravlje <em>Tracker</em></div>
-              </div>
-              <nav className="zt-sidebar-nav">
-                {tabs.map(t=>(
-                  <button key={t.id} className={`zt-sidebar-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
-                    <span className="tab-icon">{t.icon}</span>
-                    <span>{t.l}</span>
-                  </button>
-                ))}
-              </nav>
-              <div className="zt-sidebar-footer">
-                <button className="pill dk" style={{fontSize:12,padding:"9px 16px",width:"100%"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
-              </div>
-            </div>
-            <div className="zt-main">
-              <div className="zt-main-hdr">
-                <div className="zt-main-title">{activeTab?.icon} {activeTab?.l}</div>
-                <div style={{fontSize:12,color:"#aaa"}}>{session?.user?.email}</div>
-              </div>
-              <div className="zt-body">{tabContent}</div>
-            </div>
+          <div className="zt-tabbar">
+            {tabs.map(t=><button key={t.id} className={`zt-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.icon} {t.l}</button>)}
           </div>
+        </div>
+        <div className="zt-body">{tabContent}</div>
+      </div>
 
-
+      {/* DESKTOP layout */}
+      <div className="zt-desktop">
+        <div className="zt-sidebar">
+          <div className="zt-sidebar-logo">
+            <div className="zt-logo">Zdravlje <em>Tracker</em></div>
+          </div>
+          <nav className="zt-sidebar-nav">
+            {tabs.map(t=>(
+              <button key={t.id} className={`zt-sidebar-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
+                <span className="tab-icon">{t.icon}</span>
+                <span>{t.l}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="zt-sidebar-footer">
+            <button className="pill dk" style={{fontSize:12,padding:"9px 16px",width:"100%"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+          </div>
+        </div>
+        <div className="zt-main">
+          <div className="zt-main-hdr">
+            <div className="zt-main-title">{activeTab?.icon} {activeTab?.l}</div>
+            <div style={{fontSize:12,color:"#aaa"}}>{session?.user?.email}</div>
+          </div>
+          <div className="zt-body">{tabContent}</div>
         </div>
       </div>
     </>
