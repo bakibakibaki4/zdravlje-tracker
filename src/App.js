@@ -382,6 +382,11 @@ function useData(uid) {
     if(d)setNutrition(p=>[d,...p]);
   }
   async function removeNutrition(id){await sb.from("nutrition").delete().eq("id",id);setNutrition(p=>p.filter(x=>x.id!==id));}
+  async function updateNutrition(id,item){
+    const s=scaleFood({kcal:item.kcalPer,protein:item.proteinPer,carbs:item.carbsPer,fat:item.fatPer,baseAmount:1},item.quantity);
+    const{data:d}=await sb.from("nutrition").update({meal:item.meal,quantity:item.quantity,kcal:s.kcal,protein:s.protein,carbs:s.carbs,fat:s.fat}).eq("id",id).select().single();
+    if(d)setNutrition(p=>p.map(x=>x.id===id?d:x));
+  }
   async function addDigestion(item){
     // build row — only include no_stool/loperamide if columns exist
     const row={user_id:uid,date:item.date,time:item.time,stool:item.noStool?"none":item.stool,symptoms:item.symptoms,pain:item.pain,bloating:item.bloating,energy:item.energy,water:item.water,notes:item.notes};
@@ -417,11 +422,11 @@ function useData(uid) {
   }
   async function removeWeight(id){await sb.from("weight").delete().eq("id",id);setWeight(p=>p.filter(x=>x.id!==id));}
 
-  return{nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight};
+  return{nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight};
 }
 
 // ─── Nutrition tab ────────────────────────────────────────────────────────────
-function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNutrition}){
+function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNutrition,updateNutrition}){
   const [selDate,setSelDate]=useState(today());
   const [search,setSearch]=useState("");
   const [sel,setSel]=useState(null);
@@ -431,6 +436,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
   const [showCustom,setShowCustom]=useState(false);
   const [saving,setSaving]=useState(false);
   const [customErr,setCustomErr]=useState(null);
+  const [editItem,setEditItem]=useState(null); // {id, name, meal, quantity, unit, kcalPer, proteinPer, carbsPer, fatPer}
   const [goal,setGoal]=useState(()=>{try{return+localStorage.getItem("kcal_goal")||2000;}catch{return 2000;}});
 
   const [apiResults,setApiResults]=useState([]);
@@ -621,12 +627,62 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
           <div key={m}>
             <div className="meal-hd"><span>{MEAL_ICONS[m]}</span><span style={{flex:1}}>{m}</span><span className="bx bz">{mkcal} kcal</span></div>
             <div className="meal-bd">
-              {items.map(item=>(
-                <div key={item.id} className="frow">
-                  <div><div style={{fontSize:14}}>{item.base_food||item.name}</div>{item.quantity&&<div style={{fontSize:11,color:"#aaa"}}>{Number.isInteger(item.quantity)?item.quantity:+(+item.quantity).toFixed(1)} {item.unit}</div>}</div>
-                  <div style={{display:"flex",gap:4,alignItems:"center"}}><span className="bx bc">{Math.round(item.kcal)} kcal</span><span className="bx bb">{Math.round(item.protein)}g P</span><button className="rm" onClick={()=>removeNutrition(item.id)}>×</button></div>
-                </div>
-              ))}
+              {items.map(item=>{
+                const isEditing=editItem&&editItem.id===item.id;
+                const qtyRaw=item.quantity||item.baseAmount||100;
+                return(
+                  <div key={item.id}>
+                    <div className="frow">
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14}}>{item.base_food||item.name}</div>
+                        {item.quantity&&<div style={{fontSize:11,color:"#aaa"}}>{Number.isInteger(item.quantity)?item.quantity:+(+item.quantity).toFixed(1)} {item.unit}</div>}
+                      </div>
+                      <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                        <span className="bx bc">{Math.round(item.kcal)} kcal</span>
+                        <span className="bx bb">{Math.round(item.protein)}g P</span>
+                        <button className="rm" style={{fontSize:16,color:"#378add"}} onClick={()=>{
+                          if(isEditing){setEditItem(null);return;}
+                          const perBase=qtyRaw>0?1/qtyRaw:0;
+                          setEditItem({id:item.id,name:item.base_food||item.name,meal:item.meal,quantity:qtyRaw,unit:item.unit||"g",
+                            kcalPer:item.kcal*perBase,proteinPer:item.protein*perBase,carbsPer:item.carbs*perBase,fatPer:item.fat*perBase});
+                        }}>✎</button>
+                        <button className="rm" onClick={()=>{if(isEditing)setEditItem(null);removeNutrition(item.id);}}>×</button>
+                      </div>
+                    </div>
+                    {isEditing&&(
+                      <div style={{padding:"12px 0 14px",borderTop:"1px solid #f0ede8",animation:"si .15s ease"}}>
+                        <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+                          <div style={{flex:"1 1 120px"}}>
+                            <span className="lbl">Količina ({editItem.unit})</span>
+                            <input type="number" className="inp" inputMode="decimal"
+                              value={editItem.quantity}
+                              step={editItem.unit==="g"||editItem.unit==="ml"?10:1}
+                              min="0.1"
+                              onChange={e=>setEditItem(ei=>({...ei,quantity:+e.target.value}))}/>
+                          </div>
+                          <div style={{flex:"1 1 120px"}}>
+                            <span className="lbl">Obrok</span>
+                            <select className="inp" value={editItem.meal} onChange={e=>setEditItem(ei=>({...ei,meal:e.target.value}))}
+                              style={{WebkitAppearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 12px center",paddingRight:30}}>
+                              {MEALS.map(m=><option key={m} value={m}>{m}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{fontSize:12,color:"#0f6e56",marginBottom:10}}>
+                          {editItem.quantity>0&&`→ ${Math.round(editItem.kcalPer*editItem.quantity)} kcal · ${Math.round(editItem.proteinPer*editItem.quantity)}g P · ${Math.round(editItem.carbsPer*editItem.quantity)}g U · ${Math.round(editItem.fatPer*editItem.quantity)}g M`}
+                        </div>
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="btn btn-g" style={{flex:1}} onClick={async()=>{
+                            await updateNutrition(editItem.id,editItem);
+                            setEditItem(null);
+                          }}>Spremi</button>
+                          <button className="btn btn-ghost" style={{width:52}} onClick={()=>setEditItem(null)}>✕</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -1075,7 +1131,7 @@ export default function App(){
   const [session,setSession]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
   const [tab,setTab]=useState("nutrition");
-  const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(session?.user?.id);
+  const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(session?.user?.id);
 
   useEffect(()=>{
     sb.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthLoading(false);});
@@ -1106,7 +1162,7 @@ export default function App(){
           {loading
             ?<div style={{textAlign:"center",padding:"50px 0",color:"#bbb",fontSize:14}}>Učitavanje...</div>
             :<>
-              {tab==="nutrition"&&<NutritionTab nutrition={nutrition} customFoods={customFoods} addNutrition={addNutrition} addCustomFood={addCustomFood} removeNutrition={removeNutrition}/>}
+              {tab==="nutrition"&&<NutritionTab nutrition={nutrition} customFoods={customFoods} addNutrition={addNutrition} addCustomFood={addCustomFood} removeNutrition={removeNutrition} updateNutrition={updateNutrition}/>}
               {tab==="digestion"&&<DigestionTab digestion={digestion} addDigestion={addDigestion} removeDigestion={removeDigestion}/>}
               {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
               {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
