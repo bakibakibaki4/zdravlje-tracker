@@ -99,7 +99,30 @@ input[type="number"]{-moz-appearance:textfield;}
 input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;}
 
 /* layout */
-.zt{font-family:'DM Sans',sans-serif;min-height:100dvh;background:#f5f3ef;color:#1a1a18;max-width:600px;margin:0 auto;}
+.zt-root{min-height:100dvh;background:#f5f3ef;display:flex;flex-direction:column;}
+.zt{font-family:'DM Sans',sans-serif;color:#1a1a18;flex:1;display:flex;flex-direction:column;}
+
+/* desktop sidebar layout */
+@media(min-width:900px){
+  .zt-root{background:#1a1a18;}
+  .zt-desktop{display:flex;min-height:100dvh;max-width:1200px;margin:0 auto;width:100%;}
+  .zt-sidebar{width:260px;flex-shrink:0;background:#1a1a18;padding:32px 0;position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;}
+  .zt-sidebar-logo{padding:0 28px 32px;border-bottom:1px solid #2a2a28;margin-bottom:20px;}
+  .zt-sidebar-logo .zt-logo{font-size:28px;}
+  .zt-sidebar-nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1;}
+  .zt-sidebar-tab{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:11px;background:none;border:none;font-size:14px;font-weight:400;cursor:pointer;color:#666;width:100%;text-align:left;transition:all .15s;}
+  .zt-sidebar-tab:hover{background:#242422;color:#ccc;}
+  .zt-sidebar-tab.on{background:#1d9e75;color:#fff;font-weight:500;}
+  .zt-sidebar-tab .tab-icon{font-size:18px;width:24px;text-align:center;}
+  .zt-sidebar-footer{padding:20px 28px 0;border-top:1px solid #2a2a28;margin-top:auto;}
+  .zt-main{flex:1;background:#f5f3ef;border-radius:20px 0 0 20px;overflow:hidden;display:flex;flex-direction:column;}
+  .zt-main-hdr{background:#fff;padding:24px 32px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between;}
+  .zt-main-title{font-family:'Fraunces',serif;font-size:22px;font-weight:300;color:#1a1a18;letter-spacing:-.5px;}
+  .zt-body{padding:24px 32px 48px;flex:1;}
+  .zt-hdr{display:none;}
+}
+
+/* mobile header - hidden on desktop */
 .zt-hdr{background:#1a1a18;padding:env(safe-area-inset-top,0) 0 0;position:sticky;top:0;z-index:50;}
 .zt-hdr-in{padding:16px 18px 0;display:flex;justify-content:space-between;align-items:center;}
 .zt-logo{font-family:'Fraunces',serif;font-size:24px;font-weight:300;color:#f5f3ef;letter-spacing:-0.8px;line-height:1;}
@@ -109,6 +132,13 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
 .zt-tab{flex:1;min-width:fit-content;padding:12px 16px;background:none;border:none;font-size:13px;font-weight:400;cursor:pointer;color:#555;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;-webkit-tap-highlight-color:transparent;}
 .zt-tab.on{color:#f5f3ef;border-bottom-color:#1d9e75;font-weight:500;}
 .zt-body{padding:16px 14px 100px;}
+
+/* desktop grid for cards */
+@media(min-width:900px){
+  .zt-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .zt-body > .card:first-child,.zt-body > div:first-child{grid-column:1/-1;}
+  .cal-wrap{grid-column:1/-1;}
+}
 
 /* cards */
 .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);}
@@ -1142,32 +1172,67 @@ export default function App(){
   if(authLoading)return<div className="zt-load"><div className="zt-load-in">Zdravlje <em style={{color:"#9fe1cb"}}>Tracker</em></div></div>;
   if(!session)return<AuthScreen/>;
 
-  const tabs=[{id:"nutrition",l:"🥗 Prehrana"},{id:"digestion",l:"🫁 Probava"},{id:"weight",l:"⚖️ Kilaža"},{id:"stats",l:"📊 Statistike"}];
+  const tabs=[{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"}];
+  const activeTab=tabs.find(t=>t.id===tab);
+
+  const tabContent=loading
+    ?<div style={{textAlign:"center",padding:"50px 0",color:"#bbb",fontSize:14}}>Učitavanje...</div>
+    :<>
+      {tab==="nutrition"&&<NutritionTab nutrition={nutrition} customFoods={customFoods} addNutrition={addNutrition} addCustomFood={addCustomFood} removeNutrition={removeNutrition} updateNutrition={updateNutrition}/>}
+      {tab==="digestion"&&<DigestionTab digestion={digestion} addDigestion={addDigestion} removeDigestion={removeDigestion}/>}
+      {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
+      {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
+    </>;
 
   return(
     <>
       <style>{CSS}</style>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-      <div className="zt">
-        <div className="zt-hdr">
-          <div className="zt-hdr-in">
-            <div className="zt-logo">Zdravlje <em>Tracker</em></div>
-            <button className="pill dk" style={{fontSize:11,padding:"6px 12px"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+      <div className="zt-root">
+        <div className="zt">
+          {/* Mobile header */}
+          <div className="zt-hdr">
+            <div className="zt-hdr-in">
+              <div className="zt-logo">Zdravlje <em>Tracker</em></div>
+              <button className="pill dk" style={{fontSize:11,padding:"6px 12px"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+            </div>
+            <div className="zt-tabbar">
+              {tabs.map(t=><button key={t.id} className={`zt-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.icon} {t.l}</button>)}
+            </div>
           </div>
-          <div className="zt-tabbar">
-            {tabs.map(t=><button key={t.id} className={`zt-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
+
+          {/* Desktop layout */}
+          <div className="zt-desktop">
+            <div className="zt-sidebar">
+              <div className="zt-sidebar-logo">
+                <div className="zt-logo">Zdravlje <em>Tracker</em></div>
+              </div>
+              <nav className="zt-sidebar-nav">
+                {tabs.map(t=>(
+                  <button key={t.id} className={`zt-sidebar-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
+                    <span className="tab-icon">{t.icon}</span>
+                    <span>{t.l}</span>
+                  </button>
+                ))}
+              </nav>
+              <div className="zt-sidebar-footer">
+                <button className="pill dk" style={{fontSize:12,padding:"9px 16px",width:"100%"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+              </div>
+            </div>
+            <div className="zt-main">
+              <div className="zt-main-hdr">
+                <div className="zt-main-title">{activeTab?.icon} {activeTab?.l}</div>
+                <div style={{fontSize:12,color:"#aaa"}}>{session?.user?.email}</div>
+              </div>
+              <div className="zt-body">{tabContent}</div>
+            </div>
           </div>
-        </div>
-        <div className="zt-body">
-          {loading
-            ?<div style={{textAlign:"center",padding:"50px 0",color:"#bbb",fontSize:14}}>Učitavanje...</div>
-            :<>
-              {tab==="nutrition"&&<NutritionTab nutrition={nutrition} customFoods={customFoods} addNutrition={addNutrition} addCustomFood={addCustomFood} removeNutrition={removeNutrition} updateNutrition={updateNutrition}/>}
-              {tab==="digestion"&&<DigestionTab digestion={digestion} addDigestion={addDigestion} removeDigestion={removeDigestion}/>}
-              {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
-              {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
-            </>
-          }
+
+          {/* Mobile body (hidden on desktop via CSS) */}
+          <div className="zt-body" style={{display:"block"}} id="mobile-body">
+            <style>{`@media(min-width:900px){#mobile-body{display:none!important;}}`}</style>
+            {tabContent}
+          </div>
         </div>
       </div>
     </>
