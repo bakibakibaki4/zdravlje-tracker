@@ -105,7 +105,7 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
 /* desktop sidebar layout */
 @media(min-width:900px){
   .zt-root{background:#1a1a18;}
-  .zt-desktop{display:flex;min-height:100dvh;max-width:1200px;margin:0 auto;width:100%;}
+
   .zt-sidebar{width:260px;flex-shrink:0;background:#1a1a18;padding:32px 0;position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;}
   .zt-sidebar-logo{padding:0 28px 32px;border-bottom:1px solid #2a2a28;margin-bottom:20px;}
   .zt-sidebar-logo .zt-logo{font-size:28px;}
@@ -121,6 +121,10 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
   .zt-body{padding:24px 32px 48px;flex:1;}
   .zt-hdr{display:none;}
 }
+
+/* desktop panel hidden on mobile */
+.zt-desktop{display:none!important;}
+@media(min-width:900px){.zt-desktop{display:flex!important;}.zt-hdr{display:none!important;}.zt-body{padding:24px 32px 48px;}}
 
 /* mobile header - hidden on desktop */
 .zt-hdr{background:#1a1a18;padding:env(safe-area-inset-top,0) 0 0;position:sticky;top:0;z-index:50;}
@@ -1228,11 +1232,7 @@ export default function App(){
             </div>
           </div>
 
-          {/* Mobile body (hidden on desktop via CSS) */}
-          <div className="zt-body" style={{display:"block"}} id="mobile-body">
-            <style>{`@media(min-width:900px){#mobile-body{display:none!important;}}`}</style>
-            {tabContent}
-          </div>
+
         </div>
       </div>
     </>
