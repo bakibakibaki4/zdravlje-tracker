@@ -1167,19 +1167,9 @@ function StatsTab({nutrition,digestion}){
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App(){
-  const [session,setSession]=useState(null);
-  const [authLoading,setAuthLoading]=useState(true);
   const [tab,setTab]=useState("nutrition");
-  const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(session?.user?.id);
-
-  useEffect(()=>{
-    sb.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthLoading(false);});
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,s)=>{setSession(s);setAuthLoading(false);});
-    return()=>subscription.unsubscribe();
-  },[]);
-
-  if(authLoading)return<div className="zt-load"><div className="zt-load-in">Zdravlje <em style={{color:"#9fe1cb"}}>Tracker</em></div></div>;
-  if(!session)return<AuthScreen/>;
+  const UID="189bcf56-7374-4def-9790-9f20617601b2";
+  const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
   const tabs=[{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"}];
   const activeTab=tabs.find(t=>t.id===tab);
@@ -1203,7 +1193,7 @@ export default function App(){
         <div className="zt-hdr">
           <div className="zt-hdr-in">
             <div className="zt-logo">Zdravlje <em>Tracker</em></div>
-            <button className="pill dk" style={{fontSize:11,padding:"6px 12px"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+            
           </div>
           <div className="zt-tabbar">
             {tabs.map(t=><button key={t.id} className={`zt-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.icon} {t.l}</button>)}
@@ -1227,13 +1217,13 @@ export default function App(){
             ))}
           </nav>
           <div className="zt-sidebar-footer">
-            <button className="pill dk" style={{fontSize:12,padding:"9px 16px",width:"100%"}} onClick={()=>sb.auth.signOut()}>Odjava</button>
+            
           </div>
         </div>
         <div className="zt-main">
           <div className="zt-main-hdr">
             <div className="zt-main-title">{activeTab?.icon} {activeTab?.l}</div>
-            <div style={{fontSize:12,color:"#aaa"}}>{session?.user?.email}</div>
+            
           </div>
           <div className="zt-body">{tabContent}</div>
         </div>
