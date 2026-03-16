@@ -7,53 +7,498 @@ const sb = createClient(
 );
 
 const BUILTIN_FOODS = [
-  {name:"Piletina (prsa)",unit:"g",baseAmount:100,kcal:165,protein:31,carbs:0,fat:3.6},
-  {name:"Piletina (but)",unit:"g",baseAmount:100,kcal:209,protein:26,carbs:0,fat:11},
-  {name:"Riža bijela",unit:"g",baseAmount:100,kcal:130,protein:2.7,carbs:28,fat:0.3},
-  {name:"Riža smeđa",unit:"g",baseAmount:100,kcal:112,protein:2.6,carbs:23,fat:0.9},
-  {name:"Jaje",unit:"kom",baseAmount:1,kcal:78,protein:6,carbs:0.6,fat:5},
+  {name:"Piletina prsa (kuhana)",unit:"g",baseAmount:100,kcal:165,protein:31,carbs:0,fat:3.6},
+  {name:"Piletina but (kuhani)",unit:"g",baseAmount:100,kcal:209,protein:26,carbs:0,fat:11},
+  {name:"Piletina cijela (pečena)",unit:"g",baseAmount:100,kcal:239,protein:27,carbs:0,fat:14},
+  {name:"Piletina krilca",unit:"g",baseAmount:100,kcal:290,protein:27,carbs:0,fat:19},
+  {name:"Puretina prsa",unit:"g",baseAmount:100,kcal:135,protein:30,carbs:0,fat:1},
+  {name:"Puretina but",unit:"g",baseAmount:100,kcal:187,protein:28,carbs:0,fat:8},
+  {name:"Govedina mršava",unit:"g",baseAmount:100,kcal:215,protein:26,carbs:0,fat:12},
+  {name:"Govedina mljevena (10% masti)",unit:"g",baseAmount:100,kcal:176,protein:20,carbs:0,fat:10},
+  {name:"Govedina mljevena (20% masti)",unit:"g",baseAmount:100,kcal:254,protein:17,carbs:0,fat:20},
+  {name:"Biftek (goveđi)",unit:"g",baseAmount:100,kcal:271,protein:26,carbs:0,fat:18},
+  {name:"Goveđi odrezak",unit:"g",baseAmount:100,kcal:207,protein:28,carbs:0,fat:10},
+  {name:"Teleće meso",unit:"g",baseAmount:100,kcal:172,protein:26,carbs:0,fat:7},
+  {name:"Janjetina but",unit:"g",baseAmount:100,kcal:258,protein:25,carbs:0,fat:17},
+  {name:"Janjetina kotlet",unit:"g",baseAmount:100,kcal:294,protein:25,carbs:0,fat:21},
+  {name:"Svinjetina but",unit:"g",baseAmount:100,kcal:242,protein:27,carbs:0,fat:14},
+  {name:"Svinjetina kotlet",unit:"g",baseAmount:100,kcal:231,protein:25,carbs:0,fat:14},
+  {name:"Svinjetina mljevena",unit:"g",baseAmount:100,kcal:263,protein:18,carbs:0,fat:21},
+  {name:"Svinjski file",unit:"g",baseAmount:100,kcal:143,protein:22,carbs:0,fat:6},
+  {name:"Slanina",unit:"g",baseAmount:30,kcal:134,protein:4,carbs:0.1,fat:13},
+  {name:"Šunka kuhana",unit:"g",baseAmount:50,kcal:52,protein:8,carbs:1,fat:2},
+  {name:"Salama",unit:"g",baseAmount:30,kcal:105,protein:5,carbs:1,fat:9},
+  {name:"Hrenovka",unit:"kom",baseAmount:1,kcal:140,protein:5,carbs:2,fat:12},
+  {name:"Kobasica",unit:"kom",baseAmount:1,kcal:250,protein:10,carbs:2,fat:22},
+  {name:"Chorizo",unit:"g",baseAmount:30,kcal:124,protein:6,carbs:1,fat:11},
+  {name:"Panceta",unit:"g",baseAmount:30,kcal:129,protein:5,carbs:0,fat:12},
+  {name:"Pečenica",unit:"g",baseAmount:50,kcal:117,protein:14,carbs:0,fat:7},
+  {name:"Mortadela",unit:"g",baseAmount:30,kcal:87,protein:4,carbs:1,fat:8},
+  {name:"Pašteta (pileća)",unit:"g",baseAmount:50,kcal:148,protein:6,carbs:2,fat:13},
+  {name:"Losos (svježi)",unit:"g",baseAmount:100,kcal:208,protein:20,carbs:0,fat:13},
+  {name:"Losos (dimljeni)",unit:"g",baseAmount:100,kcal:172,protein:22,carbs:0,fat:9},
+  {name:"Tunjevina (konzerva u vodi)",unit:"g",baseAmount:100,kcal:116,protein:26,carbs:0,fat:1},
+  {name:"Tunjevina (konzerva u ulju)",unit:"g",baseAmount:100,kcal:200,protein:24,carbs:0,fat:11},
+  {name:"Skuša",unit:"g",baseAmount:100,kcal:205,protein:19,carbs:0,fat:14},
+  {name:"Sardine (konzerva)",unit:"g",baseAmount:100,kcal:208,protein:25,carbs:0,fat:11},
+  {name:"Bakalar (svježi)",unit:"g",baseAmount:100,kcal:82,protein:18,carbs:0,fat:0.7},
+  {name:"Bakalar (sušeni)",unit:"g",baseAmount:100,kcal:290,protein:65,carbs:0,fat:2},
+  {name:"Brancin",unit:"g",baseAmount:100,kcal:97,protein:19,carbs:0,fat:2},
+  {name:"Orada",unit:"g",baseAmount:100,kcal:96,protein:19,carbs:0,fat:2},
+  {name:"Oslić",unit:"g",baseAmount:100,kcal:74,protein:17,carbs:0,fat:0.5},
+  {name:"Smuđ",unit:"g",baseAmount:100,kcal:91,protein:19,carbs:0,fat:1},
+  {name:"Rak (kuhani)",unit:"g",baseAmount:100,kcal:97,protein:20,carbs:0,fat:1.5},
+  {name:"Škampi (kuhani)",unit:"g",baseAmount:100,kcal:99,protein:24,carbs:0,fat:0.3},
+  {name:"Lignje",unit:"g",baseAmount:100,kcal:92,protein:16,carbs:3,fat:1.4},
+  {name:"Hobotnica (kuhana)",unit:"g",baseAmount:100,kcal:164,protein:30,carbs:4,fat:2},
+  {name:"Školjke (dagnje)",unit:"g",baseAmount:100,kcal:86,protein:12,carbs:4,fat:2.2},
+  {name:"Ostrige",unit:"g",baseAmount:100,kcal:69,protein:7,carbs:4,fat:2.5},
+  {name:"Inćuni (konzerva)",unit:"g",baseAmount:20,kcal:42,protein:6,carbs:0,fat:2},
+  {name:"Pastrmka",unit:"g",baseAmount:100,kcal:141,protein:20,carbs:0,fat:6.6},
+  {name:"Smuđevina",unit:"g",baseAmount:100,kcal:84,protein:19,carbs:0,fat:0.5},
+  {name:"Jaje (cijelo)",unit:"kom",baseAmount:1,kcal:78,protein:6,carbs:0.6,fat:5},
   {name:"Bjelanjak",unit:"kom",baseAmount:1,kcal:17,protein:3.6,carbs:0.2,fat:0.1},
-  {name:"Banana",unit:"kom",baseAmount:1,kcal:89,protein:1.1,carbs:23,fat:0.3},
-  {name:"Jabuka",unit:"kom",baseAmount:1,kcal:72,protein:0.4,carbs:19,fat:0.2},
-  {name:"Naranča",unit:"kom",baseAmount:1,kcal:62,protein:1.2,carbs:15,fat:0.2},
-  {name:"Jagode",unit:"g",baseAmount:100,kcal:32,protein:0.7,carbs:7.7,fat:0.3},
-  {name:"Borovnice",unit:"g",baseAmount:100,kcal:57,protein:0.7,carbs:14,fat:0.3},
-  {name:"Avokado",unit:"kom",baseAmount:1,kcal:234,protein:2.9,carbs:12,fat:21},
-  {name:"Jogurt (grčki)",unit:"g",baseAmount:150,kcal:132,protein:12,carbs:5,fat:7},
-  {name:"Jogurt (obični)",unit:"g",baseAmount:150,kcal:90,protein:6,carbs:11,fat:2},
+  {name:"Žumanjak",unit:"kom",baseAmount:1,kcal:61,protein:2.7,carbs:0.3,fat:5.4},
   {name:"Mlijeko (3.2%)",unit:"ml",baseAmount:200,kcal:122,protein:6.4,carbs:9.6,fat:4.8},
-  {name:"Svježi sir",unit:"g",baseAmount:100,kcal:98,protein:11,carbs:3.4,fat:4.3},
-  {name:"Feta sir",unit:"g",baseAmount:30,kcal:75,protein:4,carbs:1.2,fat:6},
+  {name:"Mlijeko (1.5%)",unit:"ml",baseAmount:200,kcal:92,protein:6.6,carbs:9.8,fat:2.8},
+  {name:"Mlijeko (0%)",unit:"ml",baseAmount:200,kcal:70,protein:6.8,carbs:10,fat:0.3},
+  {name:"Mlijeko bademovo",unit:"ml",baseAmount:200,kcal:28,protein:1,carbs:2,fat:2.4},
+  {name:"Mlijeko zobeno",unit:"ml",baseAmount:200,kcal:86,protein:3,carbs:15,fat:3},
+  {name:"Mlijeko sojino",unit:"ml",baseAmount:200,kcal:80,protein:7,carbs:6,fat:4},
+  {name:"Jogurt (3.2%)",unit:"g",baseAmount:150,kcal:90,protein:5,carbs:7,fat:3.5},
+  {name:"Jogurt grčki (10%)",unit:"g",baseAmount:150,kcal:171,protein:9,carbs:5,fat:12},
+  {name:"Jogurt grčki (0%)",unit:"g",baseAmount:150,kcal:83,protein:15,carbs:6,fat:0.5},
+  {name:"Jogurt skyr",unit:"g",baseAmount:150,kcal:90,protein:15,carbs:6,fat:0.3},
+  {name:"Kefir",unit:"ml",baseAmount:200,kcal:122,protein:6.4,carbs:9.6,fat:3.6},
+  {name:"Svježi sir (tučeni)",unit:"g",baseAmount:100,kcal:98,protein:11,carbs:3.4,fat:4.3},
   {name:"Skuta",unit:"g",baseAmount:100,kcal:103,protein:11,carbs:4,fat:4.5},
+  {name:"Ricotta",unit:"g",baseAmount:100,kcal:174,protein:11,carbs:3,fat:13},
+  {name:"Feta sir",unit:"g",baseAmount:30,kcal:75,protein:4,carbs:1.2,fat:6},
+  {name:"Mozzarella",unit:"g",baseAmount:30,kcal:72,protein:5,carbs:0.6,fat:5.5},
+  {name:"Mozzarella (light)",unit:"g",baseAmount:30,kcal:54,protein:6,carbs:0.6,fat:3},
+  {name:"Gouda",unit:"g",baseAmount:30,kcal:101,protein:7,carbs:0.6,fat:8},
+  {name:"Edamer",unit:"g",baseAmount:30,kcal:92,protein:7,carbs:0.5,fat:7},
+  {name:"Parmezan",unit:"g",baseAmount:15,kcal:59,protein:5,carbs:0,fat:4},
+  {name:"Cheddar",unit:"g",baseAmount:30,kcal:123,protein:7,carbs:0.4,fat:10},
+  {name:"Gauda dimljena",unit:"g",baseAmount:30,kcal:103,protein:7,carbs:0.5,fat:8},
+  {name:"Brie",unit:"g",baseAmount:30,kcal:101,protein:6,carbs:0.1,fat:8.5},
+  {name:"Camembert",unit:"g",baseAmount:30,kcal:87,protein:5.5,carbs:0.1,fat:7},
+  {name:"Kravlje mlijeko (punomasno)",unit:"ml",baseAmount:200,kcal:130,protein:6.8,carbs:9.4,fat:7},
+  {name:"Maslac",unit:"g",baseAmount:10,kcal:72,protein:0.1,carbs:0,fat:8},
+  {name:"Ghee",unit:"g",baseAmount:10,kcal:90,protein:0,carbs:0,fat:10},
+  {name:"Pavlaka (20%)",unit:"g",baseAmount:30,kcal:60,protein:0.7,carbs:1.2,fat:6},
+  {name:"Kiselo vrhnje",unit:"g",baseAmount:30,kcal:57,protein:0.7,carbs:1.4,fat:5.4},
+  {name:"Krem sir",unit:"g",baseAmount:30,kcal:88,protein:2,carbs:1.4,fat:8.5},
+  {name:"Mascarpone",unit:"g",baseAmount:30,kcal:138,protein:1.5,carbs:1,fat:14},
+  {name:"Proteinski jogurt",unit:"g",baseAmount:150,kcal:105,protein:15,carbs:8,fat:1},
   {name:"Kruh bijeli",unit:"kriška",baseAmount:1,kcal:80,protein:3,carbs:15,fat:1},
   {name:"Kruh integralni",unit:"kriška",baseAmount:1,kcal:69,protein:3.6,carbs:12,fat:1.1},
+  {name:"Kruh raženi",unit:"kriška",baseAmount:1,kcal:65,protein:2.7,carbs:12,fat:0.7},
+  {name:"Kruh s kvascem (domaći)",unit:"kriška",baseAmount:1,kcal:75,protein:3,carbs:14,fat:1},
+  {name:"Bagel",unit:"kom",baseAmount:1,kcal:245,protein:10,carbs:48,fat:1.5},
+  {name:"Ciabatta",unit:"g",baseAmount:60,kcal:156,protein:5.4,carbs:30,fat:1.5},
+  {name:"Baguette",unit:"g",baseAmount:50,kcal:138,protein:5,carbs:26,fat:1},
+  {name:"Lepinju (hamburger)",unit:"kom",baseAmount:1,kcal:120,protein:4,carbs:22,fat:2},
+  {name:"Tortilja pšenična",unit:"kom",baseAmount:1,kcal:146,protein:4,carbs:24,fat:3.5},
+  {name:"Tortilja kukuruzna",unit:"kom",baseAmount:1,kcal:104,protein:2.5,carbs:20,fat:2},
+  {name:"Pitta kruh",unit:"kom",baseAmount:1,kcal:165,protein:6,carbs:33,fat:1},
+  {name:"Dvopek",unit:"g",baseAmount:10,kcal:40,protein:1.4,carbs:7,fat:0.5},
+  {name:"Rižini keksi",unit:"kom",baseAmount:1,kcal:35,protein:0.7,carbs:7,fat:0.3},
+  {name:"Krekeri",unit:"g",baseAmount:30,kcal:130,protein:3,carbs:20,fat:4.5},
+  {name:"Riža bijela (kuhana)",unit:"g",baseAmount:100,kcal:130,protein:2.7,carbs:28,fat:0.3},
+  {name:"Riža smeđa (kuhana)",unit:"g",baseAmount:100,kcal:112,protein:2.6,carbs:23,fat:0.9},
+  {name:"Riža basmati (kuhana)",unit:"g",baseAmount:100,kcal:121,protein:2.5,carbs:26,fat:0.4},
+  {name:"Riža jasmine (kuhana)",unit:"g",baseAmount:100,kcal:129,protein:2.7,carbs:28,fat:0.3},
+  {name:"Tjestenina bijela (kuhana)",unit:"g",baseAmount:100,kcal:131,protein:5,carbs:25,fat:1.1},
+  {name:"Tjestenina integralna (kuhana)",unit:"g",baseAmount:100,kcal:124,protein:5,carbs:23,fat:1.1},
+  {name:"Špageti (kuhani)",unit:"g",baseAmount:100,kcal:131,protein:5,carbs:25,fat:1.1},
+  {name:"Penne (kuhane)",unit:"g",baseAmount:100,kcal:131,protein:5,carbs:25,fat:1.1},
+  {name:"Fusilli (kuhani)",unit:"g",baseAmount:100,kcal:131,protein:5,carbs:25,fat:1.1},
+  {name:"Lasagne (kuhane)",unit:"g",baseAmount:100,kcal:131,protein:5,carbs:25,fat:1.1},
+  {name:"Gnocchi",unit:"g",baseAmount:100,kcal:130,protein:3,carbs:27,fat:0.8},
+  {name:"Kus-kus (kuhani)",unit:"g",baseAmount:100,kcal:112,protein:3.8,carbs:23,fat:0.2},
+  {name:"Bulgur (kuhan)",unit:"g",baseAmount:100,kcal:83,protein:3,carbs:19,fat:0.2},
+  {name:"Quinoa (kuhana)",unit:"g",baseAmount:100,kcal:120,protein:4.4,carbs:21,fat:1.9},
+  {name:"Proso (kuhano)",unit:"g",baseAmount:100,kcal:119,protein:3.5,carbs:23,fat:1},
+  {name:"Heljda (kuhana)",unit:"g",baseAmount:100,kcal:92,protein:3.4,carbs:20,fat:0.6},
+  {name:"Ječam (kuhan)",unit:"g",baseAmount:100,kcal:123,protein:2.3,carbs:28,fat:0.4},
+  {name:"Zob (kuhana)",unit:"g",baseAmount:100,kcal:71,protein:2.5,carbs:12,fat:1.5},
   {name:"Zobene pahuljice",unit:"g",baseAmount:50,kcal:189,protein:6.5,carbs:32,fat:3.5},
+  {name:"Müsli",unit:"g",baseAmount:50,kcal:184,protein:5,carbs:32,fat:3.5},
   {name:"Granola",unit:"g",baseAmount:50,kcal:224,protein:5,carbs:32,fat:9},
-  {name:"Tjestenina (suha)",unit:"g",baseAmount:80,kcal:282,protein:10,carbs:57,fat:1.4},
-  {name:"Losos",unit:"g",baseAmount:100,kcal:208,protein:20,carbs:0,fat:13},
-  {name:"Tuna (konzerva)",unit:"g",baseAmount:100,kcal:116,protein:25.5,carbs:0,fat:1},
-  {name:"Skuša",unit:"g",baseAmount:100,kcal:205,protein:19,carbs:0,fat:14},
-  {name:"Govedina",unit:"g",baseAmount:100,kcal:250,protein:26,carbs:0,fat:15},
-  {name:"Svinjetina (but)",unit:"g",baseAmount:100,kcal:242,protein:27,carbs:0,fat:14},
-  {name:"Puretina (prsa)",unit:"g",baseAmount:100,kcal:135,protein:30,carbs:0,fat:1},
-  {name:"Brokula",unit:"g",baseAmount:100,kcal:34,protein:2.8,carbs:7,fat:0.4},
-  {name:"Špinat",unit:"g",baseAmount:100,kcal:23,protein:2.9,carbs:3.6,fat:0.4},
+  {name:"Cornflakes",unit:"g",baseAmount:30,kcal:114,protein:2,carbs:25,fat:0.3},
+  {name:"Rižine pahuljice",unit:"g",baseAmount:30,kcal:113,protein:2,carbs:26,fat:0.1},
+  {name:"Polenta (kuhana)",unit:"g",baseAmount:100,kcal:70,protein:1.6,carbs:15,fat:0.3},
+  {name:"Palačinka (s mlijekom)",unit:"kom",baseAmount:1,kcal:93,protein:3,carbs:11,fat:3.7},
+  {name:"Vafli",unit:"kom",baseAmount:1,kcal:218,protein:6,carbs:25,fat:10},
+  {name:"Jabuka",unit:"kom",baseAmount:1,kcal:72,protein:0.4,carbs:19,fat:0.2},
+  {name:"Kruška",unit:"kom",baseAmount:1,kcal:96,protein:0.6,carbs:26,fat:0.2},
+  {name:"Banana",unit:"kom",baseAmount:1,kcal:89,protein:1.1,carbs:23,fat:0.3},
+  {name:"Naranča",unit:"kom",baseAmount:1,kcal:62,protein:1.2,carbs:15,fat:0.2},
+  {name:"Mandarina",unit:"kom",baseAmount:1,kcal:45,protein:0.7,carbs:11,fat:0.3},
+  {name:"Grejpfrut",unit:"kom",baseAmount:1,kcal:82,protein:1.6,carbs:21,fat:0.3},
+  {name:"Limun",unit:"kom",baseAmount:1,kcal:17,protein:0.6,carbs:5,fat:0.2},
+  {name:"Limeta",unit:"kom",baseAmount:1,kcal:20,protein:0.5,carbs:7,fat:0.1},
+  {name:"Jagode",unit:"g",baseAmount:100,kcal:32,protein:0.7,carbs:7.7,fat:0.3},
+  {name:"Maline",unit:"g",baseAmount:100,kcal:53,protein:1.2,carbs:12,fat:0.7},
+  {name:"Kupine",unit:"g",baseAmount:100,kcal:43,protein:1.4,carbs:10,fat:0.5},
+  {name:"Borovnice",unit:"g",baseAmount:100,kcal:57,protein:0.7,carbs:14,fat:0.3},
+  {name:"Trešnje",unit:"g",baseAmount:100,kcal:63,protein:1.1,carbs:16,fat:0.2},
+  {name:"Višnje",unit:"g",baseAmount:100,kcal:50,protein:1,carbs:12.2,fat:0.3},
+  {name:"Grožđe",unit:"g",baseAmount:100,kcal:69,protein:0.7,carbs:18,fat:0.2},
+  {name:"Lubenica",unit:"g",baseAmount:100,kcal:30,protein:0.6,carbs:7.6,fat:0.2},
+  {name:"Dinja",unit:"g",baseAmount:100,kcal:34,protein:0.8,carbs:8.2,fat:0.2},
+  {name:"Breskva",unit:"kom",baseAmount:1,kcal:58,protein:1.4,carbs:14,fat:0.4},
+  {name:"Nektarina",unit:"kom",baseAmount:1,kcal:62,protein:1.5,carbs:15,fat:0.5},
+  {name:"Marelica",unit:"kom",baseAmount:1,kcal:17,protein:0.5,carbs:4,fat:0.1},
+  {name:"Šljiva",unit:"kom",baseAmount:1,kcal:30,protein:0.5,carbs:8,fat:0.2},
+  {name:"Kivi",unit:"kom",baseAmount:1,kcal:42,protein:0.8,carbs:10,fat:0.4},
+  {name:"Mango",unit:"g",baseAmount:100,kcal:60,protein:0.8,carbs:15,fat:0.4},
+  {name:"Papaja",unit:"g",baseAmount:100,kcal:43,protein:0.5,carbs:11,fat:0.3},
+  {name:"Ananas",unit:"g",baseAmount:100,kcal:50,protein:0.5,carbs:13,fat:0.1},
+  {name:"Avokado",unit:"g",baseAmount:100,kcal:160,protein:2,carbs:8.5,fat:14.7},
+  {name:"Kokos (svježi)",unit:"g",baseAmount:30,kcal:106,protein:1,carbs:4.5,fat:10},
+  {name:"Smokve (svježe)",unit:"kom",baseAmount:1,kcal:37,protein:0.4,carbs:10,fat:0.1},
+  {name:"Smokve (sušene)",unit:"kom",baseAmount:1,kcal:21,protein:0.3,carbs:5.5,fat:0.1},
+  {name:"Datulje",unit:"kom",baseAmount:1,kcal:23,protein:0.2,carbs:6.2,fat:0},
+  {name:"Grožđice",unit:"g",baseAmount:30,kcal:90,protein:0.9,carbs:23,fat:0.1},
+  {name:"Suhe šljive",unit:"kom",baseAmount:1,kcal:23,protein:0.2,carbs:6,fat:0.1},
+  {name:"Suhe marelice",unit:"kom",baseAmount:1,kcal:17,protein:0.4,carbs:4,fat:0},
+  {name:"Nara",unit:"g",baseAmount:100,kcal:83,protein:1.7,carbs:19,fat:1.2},
+  {name:"Lichi",unit:"g",baseAmount:100,kcal:66,protein:0.8,carbs:17,fat:0.4},
+  {name:"Durian",unit:"g",baseAmount:100,kcal:147,protein:1.5,carbs:27,fat:5.3},
+  {name:"Zvjezdano voće",unit:"g",baseAmount:100,kcal:31,protein:1,carbs:7,fat:0.3},
+  {name:"Guava",unit:"g",baseAmount:100,kcal:68,protein:2.6,carbs:14,fat:1},
+  {name:"Brokula (kuhana)",unit:"g",baseAmount:100,kcal:35,protein:2.4,carbs:7.2,fat:0.4},
+  {name:"Cvjetača (kuhana)",unit:"g",baseAmount:100,kcal:23,protein:1.8,carbs:4.5,fat:0.3},
+  {name:"Kelj",unit:"g",baseAmount:100,kcal:35,protein:2.2,carbs:8.8,fat:0.5},
+  {name:"Prokulice",unit:"g",baseAmount:100,kcal:43,protein:3.4,carbs:8.9,fat:0.3},
+  {name:"Špinat (svježi)",unit:"g",baseAmount:100,kcal:23,protein:2.9,carbs:3.6,fat:0.4},
+  {name:"Špinat (kuhani)",unit:"g",baseAmount:100,kcal:23,protein:2.5,carbs:3.8,fat:0.3},
+  {name:"Rukola",unit:"g",baseAmount:30,kcal:8,protein:0.6,carbs:1.2,fat:0.2},
+  {name:"Zelena salata",unit:"g",baseAmount:50,kcal:7,protein:0.7,carbs:1.2,fat:0.1},
+  {name:"Iceberg salata",unit:"g",baseAmount:100,kcal:14,protein:0.9,carbs:3,fat:0.1},
+  {name:"Radiccio",unit:"g",baseAmount:50,kcal:11,protein:0.7,carbs:2.1,fat:0.1},
+  {name:"Endivija",unit:"g",baseAmount:50,kcal:8,protein:0.6,carbs:1.7,fat:0.1},
   {name:"Rajčica",unit:"kom",baseAmount:1,kcal:22,protein:1.1,carbs:4.8,fat:0.2},
+  {name:"Rajčica cherry",unit:"g",baseAmount:100,kcal:18,protein:0.9,carbs:3.9,fat:0.2},
   {name:"Krastavac",unit:"kom",baseAmount:1,kcal:16,protein:0.7,carbs:3.6,fat:0.1},
-  {name:"Paprika",unit:"kom",baseAmount:1,kcal:31,protein:1,carbs:7,fat:0.3},
-  {name:"Krumpir (kuhani)",unit:"g",baseAmount:100,kcal:87,protein:1.9,carbs:20,fat:0.1},
-  {name:"Batat",unit:"g",baseAmount:100,kcal:86,protein:1.6,carbs:20,fat:0.1},
-  {name:"Leća",unit:"g",baseAmount:100,kcal:116,protein:9,carbs:20,fat:0.4},
-  {name:"Slanutak",unit:"g",baseAmount:100,kcal:164,protein:8.9,carbs:27,fat:2.6},
+  {name:"Paprika crvena",unit:"kom",baseAmount:1,kcal:31,protein:1,carbs:7,fat:0.3},
+  {name:"Paprika zelena",unit:"kom",baseAmount:1,kcal:24,protein:1,carbs:5.5,fat:0.3},
+  {name:"Paprika žuta",unit:"kom",baseAmount:1,kcal:27,protein:1,carbs:6.3,fat:0.2},
+  {name:"Tikvica",unit:"kom",baseAmount:1,kcal:33,protein:2.4,carbs:6,fat:0.6},
+  {name:"Patlidžan",unit:"kom",baseAmount:1,kcal:97,protein:3.6,carbs:23,fat:0.6},
+  {name:"Bundeva",unit:"g",baseAmount:100,kcal:26,protein:1,carbs:7,fat:0.1},
+  {name:"Mrkva",unit:"kom",baseAmount:1,kcal:25,protein:0.6,carbs:6,fat:0.1},
+  {name:"Celer (korijen)",unit:"g",baseAmount:100,kcal:42,protein:1.5,carbs:9.2,fat:0.3},
+  {name:"Celer (stapke)",unit:"g",baseAmount:50,kcal:7,protein:0.4,carbs:1.7,fat:0.1},
+  {name:"Korijen peršina",unit:"g",baseAmount:100,kcal:55,protein:2.2,carbs:11,fat:0.5},
+  {name:"Repa",unit:"g",baseAmount:100,kcal:43,protein:1.6,carbs:10,fat:0.1},
+  {name:"Rotkvica",unit:"g",baseAmount:100,kcal:16,protein:0.7,carbs:3.4,fat:0.1},
+  {name:"Luk (crni)",unit:"kom",baseAmount:1,kcal:44,protein:1.2,carbs:10,fat:0.1},
+  {name:"Luk (bijeli)",unit:"g",baseAmount:10,kcal:15,protein:0.6,carbs:3.5,fat:0},
+  {name:"Češnjak",unit:"g",baseAmount:10,kcal:15,protein:0.6,carbs:3.1,fat:0.1},
+  {name:"Ljutika",unit:"g",baseAmount:30,kcal:22,protein:0.8,carbs:5.1,fat:0.1},
+  {name:"Poriluk",unit:"g",baseAmount:100,kcal:61,protein:1.5,carbs:14,fat:0.3},
+  {name:"Kukuruz (kuhan)",unit:"g",baseAmount:100,kcal:96,protein:3.4,carbs:21,fat:1.5},
+  {name:"Kukuruz (konzerva)",unit:"g",baseAmount:100,kcal:86,protein:3.2,carbs:19,fat:1.2},
+  {name:"Grašak (svježi)",unit:"g",baseAmount:100,kcal:81,protein:5.4,carbs:14,fat:0.4},
+  {name:"Grašak (smrznuti)",unit:"g",baseAmount:100,kcal:77,protein:5.4,carbs:14,fat:0.3},
+  {name:"Mahune",unit:"g",baseAmount:100,kcal:31,protein:1.8,carbs:7,fat:0.1},
+  {name:"Edamame",unit:"g",baseAmount:100,kcal:122,protein:11,carbs:10,fat:5.2},
+  {name:"Brokula rabe",unit:"g",baseAmount:100,kcal:22,protein:3.2,carbs:2.9,fat:0.5},
+  {name:"Artičoka",unit:"g",baseAmount:100,kcal:47,protein:3.3,carbs:11,fat:0.2},
+  {name:"Šparoge",unit:"g",baseAmount:100,kcal:20,protein:2.2,carbs:3.9,fat:0.1},
+  {name:"Bambus (izdanci)",unit:"g",baseAmount:100,kcal:27,protein:2.6,carbs:5.2,fat:0.3},
+  {name:"Krumpir bijeli (kuhan)",unit:"g",baseAmount:100,kcal:87,protein:1.9,carbs:20,fat:0.1},
+  {name:"Krumpir crveni (kuhan)",unit:"g",baseAmount:100,kcal:70,protein:1.9,carbs:15,fat:0.1},
+  {name:"Batat (kuhan)",unit:"g",baseAmount:100,kcal:76,protein:1.4,carbs:18,fat:0.1},
+  {name:"Jam (kuhan)",unit:"g",baseAmount:100,kcal:116,protein:1.5,carbs:28,fat:0.2},
+  {name:"Blitva (kuhana)",unit:"g",baseAmount:100,kcal:20,protein:1.9,carbs:4,fat:0.1},
+  {name:"Kelj pupčar",unit:"g",baseAmount:100,kcal:43,protein:3.4,carbs:9,fat:0.3},
+  {name:"Kineski kupus",unit:"g",baseAmount:100,kcal:16,protein:1.2,carbs:3.2,fat:0.2},
+  {name:"Cikla (kuhana)",unit:"g",baseAmount:100,kcal:44,protein:1.7,carbs:10,fat:0.2},
+  {name:"Kohlrabi",unit:"g",baseAmount:100,kcal:27,protein:1.7,carbs:6.2,fat:0.1},
+  {name:"Okra",unit:"g",baseAmount:100,kcal:33,protein:1.9,carbs:7.5,fat:0.2},
+  {name:"Šitake gljive",unit:"g",baseAmount:100,kcal:34,protein:2.2,carbs:6.8,fat:0.5},
+  {name:"Portobello gljive",unit:"g",baseAmount:100,kcal:22,protein:2.1,carbs:3.9,fat:0.3},
+  {name:"Šampinjoni",unit:"g",baseAmount:100,kcal:22,protein:3.1,carbs:3.3,fat:0.3},
+  {name:"Vrganj",unit:"g",baseAmount:100,kcal:25,protein:3,carbs:4,fat:0.5},
+  {name:"Lisičarke",unit:"g",baseAmount:100,kcal:38,protein:1.5,carbs:8.8,fat:0.5},
+  {name:"Leća (kuhana)",unit:"g",baseAmount:100,kcal:116,protein:9,carbs:20,fat:0.4},
+  {name:"Leća crvena (kuhana)",unit:"g",baseAmount:100,kcal:106,protein:9,carbs:18,fat:0.4},
+  {name:"Slanutak (kuhan)",unit:"g",baseAmount:100,kcal:164,protein:8.9,carbs:27,fat:2.6},
+  {name:"Grah bijeli (kuhan)",unit:"g",baseAmount:100,kcal:139,protein:9,carbs:25,fat:0.4},
+  {name:"Grah crni (kuhan)",unit:"g",baseAmount:100,kcal:132,protein:8.9,carbs:24,fat:0.5},
+  {name:"Grah kidney (kuhan)",unit:"g",baseAmount:100,kcal:127,protein:8.7,carbs:23,fat:0.5},
+  {name:"Grah pinto (kuhan)",unit:"g",baseAmount:100,kcal:143,protein:9,carbs:26,fat:0.7},
+  {name:"Soja (kuhana)",unit:"g",baseAmount:100,kcal:173,protein:17,carbs:10,fat:9},
+  {name:"Tofu (čvrsti)",unit:"g",baseAmount:100,kcal:76,protein:8,carbs:1.9,fat:4.2},
+  {name:"Tempeh",unit:"g",baseAmount:100,kcal:193,protein:19,carbs:9,fat:11},
+  {name:"Edamame (kuhani)",unit:"g",baseAmount:100,kcal:122,protein:11,carbs:10,fat:5.2},
+  {name:"Bob (kuhan)",unit:"g",baseAmount:100,kcal:110,protein:7.6,carbs:20,fat:0.4},
+  {name:"Hummus",unit:"g",baseAmount:50,kcal:117,protein:3.5,carbs:10,fat:7},
   {name:"Bademi",unit:"g",baseAmount:30,kcal:174,protein:6.3,carbs:6,fat:15},
   {name:"Orasi",unit:"g",baseAmount:30,kcal:196,protein:4.6,carbs:4.1,fat:19.6},
-  {name:"Kikiriki maslac",unit:"g",baseAmount:30,kcal:188,protein:8,carbs:6,fat:16},
+  {name:"Lješnjaci",unit:"g",baseAmount:30,kcal:188,protein:4.5,carbs:5,fat:18.4},
+  {name:"Indijski oraščić",unit:"g",baseAmount:30,kcal:157,protein:5.1,carbs:9,fat:12.4},
+  {name:"Makadamija",unit:"g",baseAmount:30,kcal:204,protein:2.2,carbs:3.9,fat:21.5},
+  {name:"Pekan",unit:"g",baseAmount:30,kcal:207,protein:2.7,carbs:4,fat:21.6},
+  {name:"Pistaći",unit:"g",baseAmount:30,kcal:172,protein:6.3,carbs:8.7,fat:14},
+  {name:"Kikiriki",unit:"g",baseAmount:30,kcal:161,protein:7.3,carbs:4.7,fat:14},
+  {name:"Pinjoli",unit:"g",baseAmount:15,kcal:96,protein:1.9,carbs:1.9,fat:9.7},
+  {name:"Sjemenke bundeve",unit:"g",baseAmount:20,kcal:113,protein:5.9,carbs:3.8,fat:9.6},
+  {name:"Sjemenke suncokreta",unit:"g",baseAmount:20,kcal:116,protein:4.2,carbs:3.8,fat:10.1},
+  {name:"Sjemenke lana",unit:"g",baseAmount:10,kcal:53,protein:1.8,carbs:2.9,fat:4.3},
+  {name:"Sjemenke chia",unit:"g",baseAmount:15,kcal:72,protein:2.5,carbs:6.2,fat:4.5},
+  {name:"Konopljine sjemenke",unit:"g",baseAmount:15,kcal:83,protein:4.9,carbs:1.3,fat:6.5},
+  {name:"Sjemenke sezama",unit:"g",baseAmount:15,kcal:89,protein:2.7,carbs:3.6,fat:7.7},
+  {name:"Mak",unit:"g",baseAmount:10,kcal:52,protein:1.8,carbs:3.5,fat:4.1},
+  {name:"Kikiriki maslac",unit:"g",baseAmount:32,kcal:188,protein:8,carbs:6,fat:16},
+  {name:"Bademov maslac",unit:"g",baseAmount:32,kcal:196,protein:7,carbs:7,fat:17},
+  {name:"Tahini",unit:"g",baseAmount:15,kcal:89,protein:2.5,carbs:3.2,fat:8.1},
   {name:"Maslinovo ulje",unit:"ml",baseAmount:10,kcal:88,protein:0,carbs:0,fat:10},
-  {name:"Maslac",unit:"g",baseAmount:10,kcal:72,protein:0.1,carbs:0,fat:8},
+  {name:"Kokosovo ulje",unit:"ml",baseAmount:10,kcal:90,protein:0,carbs:0,fat:10},
+  {name:"Suncokretovo ulje",unit:"ml",baseAmount:10,kcal:88,protein:0,carbs:0,fat:10},
+  {name:"Repičino ulje",unit:"ml",baseAmount:10,kcal:88,protein:0,carbs:0,fat:10},
+  {name:"Avokadovo ulje",unit:"ml",baseAmount:10,kcal:88,protein:0,carbs:0,fat:10},
+  {name:"Ghee",unit:"ml",baseAmount:10,kcal:90,protein:0,carbs:0,fat:10},
+  {name:"Maslac (nesoljeni)",unit:"g",baseAmount:10,kcal:72,protein:0.1,carbs:0,fat:8.1},
+  {name:"Margarin",unit:"g",baseAmount:10,kcal:71,protein:0,carbs:0,fat:8},
+  {name:"Majonezu",unit:"g",baseAmount:15,kcal:99,protein:0.2,carbs:0.1,fat:10.9},
+  {name:"Senf",unit:"g",baseAmount:10,kcal:9,protein:0.6,carbs:0.7,fat:0.5},
+  {name:"Ketchup",unit:"g",baseAmount:15,kcal:16,protein:0.3,carbs:3.8,fat:0.1},
+  {name:"Soja umak",unit:"ml",baseAmount:15,kcal:9,protein:1.5,carbs:0.9,fat:0},
+  {name:"Sol",unit:"g",baseAmount:5,kcal:0,protein:0,carbs:0,fat:0},
+  {name:"Šećer bijeli",unit:"g",baseAmount:10,kcal:40,protein:0,carbs:10,fat:0},
+  {name:"Šećer smeđi",unit:"g",baseAmount:10,kcal:38,protein:0,carbs:9.8,fat:0},
   {name:"Med",unit:"g",baseAmount:20,kcal:61,protein:0.1,carbs:16.5,fat:0},
-  {name:"Proteinski prah (whey)",unit:"g",baseAmount:30,kcal:120,protein:24,carbs:3,fat:1.5},
+  {name:"Javorov sirup",unit:"ml",baseAmount:15,kcal:52,protein:0,carbs:13,fat:0},
+  {name:"Agavin sirup",unit:"ml",baseAmount:15,kcal:47,protein:0,carbs:12,fat:0},
+  {name:"Stevija",unit:"g",baseAmount:1,kcal:0,protein:0,carbs:0,fat:0},
+  {name:"Ocat jabučni",unit:"ml",baseAmount:15,kcal:3,protein:0,carbs:0.1,fat:0},
+  {name:"Balzamični ocat",unit:"ml",baseAmount:15,kcal:25,protein:0.2,carbs:5,fat:0},
+  {name:"Worcestershire umak",unit:"ml",baseAmount:10,kcal:12,protein:0.4,carbs:2.7,fat:0},
+  {name:"Tabasco",unit:"ml",baseAmount:5,kcal:1,protein:0,carbs:0.1,fat:0},
+  {name:"Sriracha",unit:"g",baseAmount:15,kcal:19,protein:0.5,carbs:3.8,fat:0.2},
+  {name:"Curry prah",unit:"g",baseAmount:5,kcal:16,protein:0.6,carbs:2.9,fat:0.7},
+  {name:"Kurkuma",unit:"g",baseAmount:5,kcal:16,protein:0.5,carbs:3,fat:0.4},
+  {name:"Cimet",unit:"g",baseAmount:5,kcal:13,protein:0.2,carbs:3.9,fat:0.1},
+  {name:"Paprika (mljevena)",unit:"g",baseAmount:5,kcal:15,protein:0.7,carbs:3,fat:0.7},
+  {name:"Chili prah",unit:"g",baseAmount:5,kcal:15,protein:0.7,carbs:2.8,fat:0.8},
+  {name:"Voda",unit:"ml",baseAmount:250,kcal:0,protein:0,carbs:0,fat:0},
   {name:"Kava (espresso)",unit:"kom",baseAmount:1,kcal:2,protein:0.1,carbs:0,fat:0},
-  {name:"Sok od naranče",unit:"ml",baseAmount:200,kcal:94,protein:1.4,carbs:21,fat:0.4},
+  {name:"Kava (filter)",unit:"ml",baseAmount:200,kcal:2,protein:0.3,carbs:0,fat:0},
+  {name:"Kava s mlijekom",unit:"ml",baseAmount:200,kcal:51,protein:3.5,carbs:4.9,fat:2},
+  {name:"Cappuccino",unit:"ml",baseAmount:150,kcal:74,protein:4,carbs:7,fat:3},
+  {name:"Latte",unit:"ml",baseAmount:250,kcal:130,protein:7,carbs:13,fat:5},
+  {name:"Chai latte",unit:"ml",baseAmount:250,kcal:200,protein:6,carbs:30,fat:6},
+  {name:"Matcha latte",unit:"ml",baseAmount:250,kcal:150,protein:7,carbs:18,fat:5},
+  {name:"Crni čaj",unit:"ml",baseAmount:200,kcal:2,protein:0,carbs:0.5,fat:0},
+  {name:"Zeleni čaj",unit:"ml",baseAmount:200,kcal:2,protein:0,carbs:0.4,fat:0},
+  {name:"Bijeli čaj",unit:"ml",baseAmount:200,kcal:2,protein:0,carbs:0.4,fat:0},
+  {name:"Biljni čaj",unit:"ml",baseAmount:200,kcal:2,protein:0,carbs:0.5,fat:0},
+  {name:"Sok od naranče (svježi)",unit:"ml",baseAmount:200,kcal:94,protein:1.4,carbs:22,fat:0.4},
+  {name:"Sok od jabuke",unit:"ml",baseAmount:200,kcal:96,protein:0.3,carbs:24,fat:0.3},
+  {name:"Sok od mrkve",unit:"ml",baseAmount:200,kcal:94,protein:2.2,carbs:22,fat:0.4},
+  {name:"Sok od rajčice",unit:"ml",baseAmount:200,kcal:41,protein:1.6,carbs:8.5,fat:0.4},
+  {name:"Limunade",unit:"ml",baseAmount:200,kcal:85,protein:0,carbs:22,fat:0},
+  {name:"Kokosova voda",unit:"ml",baseAmount:200,kcal:46,protein:1.8,carbs:9,fat:0.5},
+  {name:"Energetski napitak",unit:"ml",baseAmount:250,kcal:113,protein:0.5,carbs:28,fat:0},
+  {name:"Proteinski shake (voda)",unit:"ml",baseAmount:300,kcal:144,protein:26,carbs:6,fat:2},
+  {name:"Smoothie (voćni)",unit:"ml",baseAmount:300,kcal:165,protein:2,carbs:40,fat:0.5},
+  {name:"Whey protein prah",unit:"g",baseAmount:30,kcal:120,protein:24,carbs:3,fat:1.5},
+  {name:"Casein protein prah",unit:"g",baseAmount:30,kcal:115,protein:24,carbs:2,fat:1},
+  {name:"Plant protein prah",unit:"g",baseAmount:30,kcal:115,protein:22,carbs:4,fat:2.5},
+  {name:"Kreatin monohidrat",unit:"g",baseAmount:5,kcal:0,protein:0,carbs:0,fat:0},
+  {name:"BCAA prah",unit:"g",baseAmount:10,kcal:40,protein:10,carbs:0,fat:0},
+  {name:"Proteinska pločica",unit:"kom",baseAmount:1,kcal:200,protein:20,carbs:20,fat:8},
+  {name:"Proteinski jogurt",unit:"g",baseAmount:150,kcal:105,protein:15,carbs:8,fat:1},
+  {name:"Čokolada tamna (70%)",unit:"g",baseAmount:20,kcal:116,protein:1.7,carbs:7.5,fat:8.3},
+  {name:"Čokolada mliječna",unit:"g",baseAmount:20,kcal:108,protein:1.7,carbs:11.8,fat:6.5},
+  {name:"Čokolada bijela",unit:"g",baseAmount:20,kcal:112,protein:1.4,carbs:12.5,fat:6.8},
+  {name:"Nutella",unit:"g",baseAmount:20,kcal:108,protein:1.3,carbs:12,fat:6.4},
+  {name:"Keks (čajni)",unit:"kom",baseAmount:1,kcal:30,protein:0.4,carbs:4.4,fat:1.3},
+  {name:"Oreo",unit:"kom",baseAmount:1,kcal:47,protein:0.5,carbs:7,fat:2},
+  {name:"Digestiv keks",unit:"kom",baseAmount:1,kcal:67,protein:1,carbs:10,fat:2.5},
+  {name:"Čokoladni kolač",unit:"g",baseAmount:80,kcal:340,protein:5,carbs:42,fat:18},
+  {name:"Cheesecake",unit:"g",baseAmount:100,kcal:321,protein:5.5,carbs:26,fat:21},
+  {name:"Tiramisu",unit:"g",baseAmount:100,kcal:240,protein:5,carbs:24,fat:14},
+  {name:"Sladoled vanilija",unit:"g",baseAmount:100,kcal:207,protein:3.5,carbs:23,fat:11},
+  {name:"Sladoled čokolada",unit:"g",baseAmount:100,kcal:216,protein:3.7,carbs:26,fat:11.5},
+  {name:"Sladoled sorbet",unit:"g",baseAmount:100,kcal:143,protein:0.5,carbs:36,fat:0.3},
+  {name:"Gelato",unit:"g",baseAmount:100,kcal:190,protein:3.5,carbs:28,fat:7},
+  {name:"Puding",unit:"g",baseAmount:100,kcal:130,protein:3.8,carbs:19,fat:4.5},
+  {name:"Palačinke sa džemom",unit:"kom",baseAmount:1,kcal:130,protein:3,carbs:24,fat:2.5},
+  {name:"Kroasan",unit:"kom",baseAmount:1,kcal:231,protein:5,carbs:27,fat:12},
+  {name:"Pain au chocolat",unit:"kom",baseAmount:1,kcal:252,protein:5.5,carbs:28,fat:14},
+  {name:"Muffin čokoladni",unit:"kom",baseAmount:1,kcal:340,protein:5,carbs:48,fat:15},
+  {name:"Donut glaziran",unit:"kom",baseAmount:1,kcal:452,protein:5,carbs:52,fat:25},
+  {name:"Krafna",unit:"kom",baseAmount:1,kcal:295,protein:5,carbs:32,fat:16},
+  {name:"Burger (domaći)",unit:"kom",baseAmount:1,kcal:540,protein:34,carbs:40,fat:26},
+  {name:"Hamburger (McDonald's Big Mac tip)",unit:"kom",baseAmount:1,kcal:563,protein:26,carbs:43,fat:33},
+  {name:"Pizza Margherita",unit:"g",baseAmount:100,kcal:235,protein:10,carbs:30,fat:8},
+  {name:"Pizza 4 formaggi",unit:"g",baseAmount:100,kcal:280,protein:13,carbs:29,fat:13},
+  {name:"Hot dog",unit:"kom",baseAmount:1,kcal:310,protein:11,carbs:28,fat:18},
+  {name:"Kebab u somunu",unit:"kom",baseAmount:1,kcal:520,protein:28,carbs:55,fat:20},
+  {name:"Gyros u piti",unit:"kom",baseAmount:1,kcal:480,protein:26,carbs:52,fat:18},
+  {name:"Wrap s piletinom",unit:"kom",baseAmount:1,kcal:420,protein:30,carbs:42,fat:14},
+  {name:"Čips (krumpirovi)",unit:"g",baseAmount:30,kcal:152,protein:1.8,carbs:15.9,fat:9.8},
+  {name:"Čips kukuruzni (Doritos)",unit:"g",baseAmount:30,kcal:145,protein:2,carbs:18,fat:7},
+  {name:"Popcorn (maslo)",unit:"g",baseAmount:30,kcal:149,protein:2,carbs:17,fat:8},
+  {name:"Pereci",unit:"g",baseAmount:30,kcal:112,protein:3,carbs:23,fat:0.8},
+  {name:"Štapići",unit:"g",baseAmount:30,kcal:130,protein:3.5,carbs:22,fat:4},
+  {name:"Rižini keksi slani",unit:"g",baseAmount:30,kcal:117,protein:2,carbs:25,fat:0.5},
+  {name:"Nachos",unit:"g",baseAmount:30,kcal:145,protein:2,carbs:19,fat:7},
+  {name:"Pita kruh sa humusom",unit:"kom",baseAmount:1,kcal:340,protein:12,carbs:50,fat:9},
+  {name:"Quesadilla sir",unit:"kom",baseAmount:1,kcal:380,protein:16,carbs:35,fat:20},
+  {name:"Tacos piletina",unit:"kom",baseAmount:1,kcal:185,protein:14,carbs:19,fat:6},
+  {name:"Pileća juha",unit:"ml",baseAmount:300,kcal:50,protein:5,carbs:5,fat:1.5},
+  {name:"Goveđa juha",unit:"ml",baseAmount:300,kcal:45,protein:5,carbs:4,fat:1.5},
+  {name:"Minestrone juha",unit:"ml",baseAmount:300,kcal:76,protein:3,carbs:14,fat:1},
+  {name:"Lećina juha",unit:"ml",baseAmount:300,kcal:140,protein:9,carbs:22,fat:2},
+  {name:"Rižoto s povrćem",unit:"g",baseAmount:200,kcal:260,protein:6,carbs:48,fat:5},
+  {name:"Rižoto s piletinom",unit:"g",baseAmount:200,kcal:310,protein:22,carbs:46,fat:6},
+  {name:"Bolonjez s tjesteninom",unit:"g",baseAmount:300,kcal:450,protein:28,carbs:50,fat:16},
+  {name:"Carbonara",unit:"g",baseAmount:300,kcal:580,protein:25,carbs:55,fat:28},
+  {name:"Lasagne",unit:"g",baseAmount:250,kcal:430,protein:24,carbs:38,fat:20},
+  {name:"Musaka",unit:"g",baseAmount:250,kcal:380,protein:22,carbs:28,fat:22},
+  {name:"Paella",unit:"g",baseAmount:250,kcal:360,protein:20,carbs:48,fat:8},
+  {name:"Punjene paprike",unit:"kom",baseAmount:1,kcal:280,protein:18,carbs:24,fat:12},
+  {name:"Sarma",unit:"kom",baseAmount:1,kcal:150,protein:10,carbs:12,fat:7},
+  {name:"Pljeskavica (goveđa)",unit:"kom",baseAmount:1,kcal:290,protein:24,carbs:10,fat:17},
+  {name:"Ćevapi",unit:"kom",baseAmount:1,kcal:58,protein:5,carbs:1.5,fat:3.8},
+  {name:"Wiener Schnitzel",unit:"g",baseAmount:150,kcal:375,protein:27,carbs:18,fat:22},
+  {name:"Pohana piletina",unit:"g",baseAmount:150,kcal:340,protein:25,carbs:20,fat:17},
+  {name:"Riba pržena",unit:"g",baseAmount:150,kcal:280,protein:22,carbs:14,fat:16},
+  {name:"Pohano povrće",unit:"g",baseAmount:150,kcal:230,protein:5,carbs:30,fat:10},
+  {name:"Gyros (samo meso)",unit:"g",baseAmount:150,kcal:340,protein:26,carbs:5,fat:24},
+  {name:"Pileći nuggets",unit:"kom",baseAmount:1,kcal:47,protein:3,carbs:3,fat:2.5},
+  {name:"Prženi krumpir",unit:"g",baseAmount:100,kcal:312,protein:3.4,carbs:41,fat:15},
+  {name:"Pohani krumpirići",unit:"g",baseAmount:100,kcal:274,protein:3.6,carbs:34,fat:13},
+  {name:"Riža s povrćem (wok)",unit:"g",baseAmount:200,kcal:220,protein:5,carbs:40,fat:4},
+  {name:"Vegetarijanski curry",unit:"g",baseAmount:200,kcal:180,protein:6,carbs:25,fat:7},
+  {name:"Dal (lećin curry)",unit:"g",baseAmount:200,kcal:210,protein:12,carbs:30,fat:5},
+  {name:"Pad Thai (piletina)",unit:"g",baseAmount:250,kcal:380,protein:20,carbs:45,fat:12},
+  {name:"Sushi (nigiri)",unit:"kom",baseAmount:2,kcal:70,protein:3.5,carbs:13,fat:0.5},
+  {name:"Sushi (maki)",unit:"kom",baseAmount:6,kcal:210,protein:8,carbs:42,fat:1},
+  {name:"Džem (jagoda)",unit:"g",baseAmount:20,kcal:47,protein:0.1,carbs:12,fat:0},
+  {name:"Džem (marelica)",unit:"g",baseAmount:20,kcal:46,protein:0.1,carbs:12,fat:0},
+  {name:"Džem (malina)",unit:"g",baseAmount:20,kcal:45,protein:0.1,carbs:12,fat:0},
+  {name:"Marmelada (naranča)",unit:"g",baseAmount:20,kcal:48,protein:0.1,carbs:12,fat:0},
+  {name:"Lješnjakov namaz",unit:"g",baseAmount:20,kcal:108,protein:1.3,carbs:12,fat:6.4},
+  {name:"Maslac od kikirikija (kremast)",unit:"g",baseAmount:32,kcal:190,protein:8,carbs:7,fat:16},
+  {name:"Maslac od badema",unit:"g",baseAmount:32,kcal:196,protein:7,carbs:7,fat:17},
+  {name:"Med (cvjetni)",unit:"g",baseAmount:20,kcal:61,protein:0.1,carbs:16.5,fat:0},
+  {name:"Sirup od agave",unit:"ml",baseAmount:15,kcal:47,protein:0,carbs:12,fat:0},
+  {name:"Javorov sirup",unit:"ml",baseAmount:15,kcal:52,protein:0,carbs:13,fat:0},
+  {name:"Čokoladni namaz (tamni)",unit:"g",baseAmount:20,kcal:116,protein:1.2,carbs:12.5,fat:7},
+  {name:"Haringa (svježa)",unit:"g",baseAmount:100,kcal:158,protein:18,carbs:0,fat:9},
+  {name:"Haringa (marinirana)",unit:"g",baseAmount:50,kcal:99,protein:9,carbs:2,fat:6},
+  {name:"Rak (konzerva)",unit:"g",baseAmount:100,kcal:84,protein:18,carbs:0,fat:1},
+  {name:"Kavijara (crni)",unit:"g",baseAmount:15,kcal:40,protein:3.9,carbs:0.6,fat:2.6},
+  {name:"Pollock",unit:"g",baseAmount:100,kcal:92,protein:19,carbs:0,fat:1},
+  {name:"Tilapia",unit:"g",baseAmount:100,kcal:96,protein:20,carbs:0,fat:2},
+  {name:"Brancin (pečeni)",unit:"g",baseAmount:100,kcal:124,protein:24,carbs:0,fat:3},
+  {name:"Tuna odrezak (svježi)",unit:"g",baseAmount:100,kcal:144,protein:23,carbs:0,fat:5},
+  {name:"Langustini (kuhani)",unit:"g",baseAmount:100,kcal:90,protein:20,carbs:0,fat:1},
+  {name:"Kapica",unit:"g",baseAmount:100,kcal:69,protein:12,carbs:3,fat:0.7},
+  {name:"Kinoa brokula",unit:"g",baseAmount:100,kcal:34,protein:3,carbs:6,fat:0.4},
+  {name:"Radicchio salata",unit:"g",baseAmount:50,kcal:11,protein:0.7,carbs:2.1,fat:0.1},
+  {name:"Vodena špinat",unit:"g",baseAmount:100,kcal:19,protein:3,carbs:2.5,fat:0.2},
+  {name:"Bamija",unit:"g",baseAmount:100,kcal:33,protein:1.9,carbs:7.5,fat:0.2},
+  {name:"Fenkl",unit:"g",baseAmount:100,kcal:31,protein:1.2,carbs:7.3,fat:0.2},
+  {name:"Artičoka srce",unit:"g",baseAmount:50,kcal:25,protein:1.8,carbs:6,fat:0.2},
+  {name:"Šparoge bijele",unit:"g",baseAmount:100,kcal:18,protein:2.2,carbs:3.9,fat:0.1},
+  {name:"Grahorice",unit:"g",baseAmount:100,kcal:86,protein:5.6,carbs:15,fat:0.5},
+  {name:"Brokcolini",unit:"g",baseAmount:100,kcal:35,protein:3,carbs:5,fat:0.4},
+  {name:"Korabica",unit:"g",baseAmount:100,kcal:27,protein:1.7,carbs:6.2,fat:0.1},
+  {name:"Rambutan",unit:"g",baseAmount:100,kcal:82,protein:0.9,carbs:21,fat:0.2},
+  {name:"Mangosteen",unit:"g",baseAmount:100,kcal:73,protein:0.4,carbs:18,fat:0.6},
+  {name:"Dragon fruit",unit:"g",baseAmount:100,kcal:60,protein:1.2,carbs:13,fat:0.4},
+  {name:"Jackfruit",unit:"g",baseAmount:100,kcal:95,protein:1.7,carbs:23,fat:0.6},
+  {name:"Cherimoya",unit:"g",baseAmount:100,kcal:75,protein:1.6,carbs:18,fat:0.7},
+  {name:"Tamarind",unit:"g",baseAmount:30,kcal:72,protein:0.9,carbs:19,fat:0.2},
+  {name:"Kumkvat",unit:"g",baseAmount:30,kcal:39,protein:0.6,carbs:10,fat:0.3},
+  {name:"Fyzalis",unit:"g",baseAmount:100,kcal:53,protein:1.9,carbs:11,fat:0.7},
+  {name:"Loquat",unit:"g",baseAmount:100,kcal:47,protein:0.4,carbs:12,fat:0.2},
+  {name:"Kiseli kupus",unit:"g",baseAmount:100,kcal:19,protein:0.9,carbs:4.3,fat:0.1},
+  {name:"Kimchi",unit:"g",baseAmount:100,kcal:15,protein:1.1,carbs:2.4,fat:0.5},
+  {name:"Kefir (puni)",unit:"ml",baseAmount:200,kcal:122,protein:7,carbs:9.6,fat:5},
+  {name:"Kombucha",unit:"ml",baseAmount:250,kcal:30,protein:0,carbs:7,fat:0},
+  {name:"Miso pasta",unit:"g",baseAmount:15,kcal:28,protein:1.9,carbs:3.5,fat:0.8},
+  {name:"Tempeh (prženi)",unit:"g",baseAmount:100,kcal:222,protein:20,carbs:12,fat:13},
+  {name:"Natto",unit:"g",baseAmount:100,kcal:212,protein:18,carbs:14,fat:11},
+  {name:"Kiseli krastavci",unit:"g",baseAmount:100,kcal:11,protein:0.5,carbs:2.3,fat:0.1},
+  {name:"Teff (kuhan)",unit:"g",baseAmount:100,kcal:101,protein:3.9,carbs:20,fat:0.7},
+  {name:"Sorgo (kuhano)",unit:"g",baseAmount:100,kcal:329,protein:11,carbs:72,fat:3.5},
+  {name:"Kamut (kuhan)",unit:"g",baseAmount:100,kcal:251,protein:11,carbs:51,fat:2},
+  {name:"Spelt (kuhan)",unit:"g",baseAmount:100,kcal:127,protein:5,carbs:26,fat:0.9},
+  {name:"Divlja riža (kuhana)",unit:"g",baseAmount:100,kcal:101,protein:4,carbs:21,fat:0.3},
+  {name:"Amarant (kuhan)",unit:"g",baseAmount:100,kcal:102,protein:3.8,carbs:19,fat:1.6},
+  {name:"Freekeh (kuhan)",unit:"g",baseAmount:100,kcal:160,protein:6,carbs:30,fat:1},
+  {name:"Whey izolat prah",unit:"g",baseAmount:30,kcal:110,protein:27,carbs:1,fat:0.5},
+  {name:"Gainer prah",unit:"g",baseAmount:100,kcal:360,protein:22,carbs:62,fat:5},
+  {name:"L-glutamin",unit:"g",baseAmount:10,kcal:40,protein:10,carbs:0,fat:0},
+  {name:"Omega-3 kapsule",unit:"kom",baseAmount:1,kcal:10,protein:0,carbs:0,fat:1},
+  {name:"Magnezij (prašak)",unit:"g",baseAmount:5,kcal:5,protein:0,carbs:1.5,fat:0},
+  {name:"Rižoto s gljivama",unit:"g",baseAmount:200,kcal:280,protein:7,carbs:46,fat:7},
+  {name:"Palenta s gorgonzolom",unit:"g",baseAmount:200,kcal:320,protein:10,carbs:38,fat:15},
+  {name:"Focaccia",unit:"g",baseAmount:80,kcal:218,protein:6.4,carbs:36,fat:6.4},
+  {name:"Ciabatta s maslinovim uljem",unit:"g",baseAmount:80,kcal:260,protein:7.5,carbs:38,fat:9},
+  {name:"Bruschettu",unit:"g",baseAmount:80,kcal:195,protein:6,carbs:32,fat:5.5},
+  {name:"Tahini haljumi",unit:"g",baseAmount:30,kcal:90,protein:5.8,carbs:0.5,fat:7.2},
+  {name:"Labneh",unit:"g",baseAmount:50,kcal:60,protein:5,carbs:2,fat:3.7},
+  {name:"Baba ghanoush",unit:"g",baseAmount:50,kcal:52,protein:1.5,carbs:5,fat:3},
+  {name:"Tzatziki",unit:"g",baseAmount:50,kcal:43,protein:2.5,carbs:2.6,fat:2.8},
+  {name:"Guacamole",unit:"g",baseAmount:50,kcal:80,protein:1,carbs:4.6,fat:7},
+  {name:"Temeljac goveđi",unit:"ml",baseAmount:300,kcal:45,protein:6,carbs:0.5,fat:1.5},
+  {name:"Temeljac pileći",unit:"ml",baseAmount:300,kcal:38,protein:5.5,carbs:0.4,fat:1},
+  {name:"Temeljac riblje",unit:"ml",baseAmount:300,kcal:30,protein:5,carbs:0.3,fat:0.5},
+  {name:"Temeljac povrtni",unit:"ml",baseAmount:300,kcal:22,protein:1,carbs:5,fat:0.1},
+  {name:"Tom yum juha",unit:"ml",baseAmount:300,kcal:80,protein:5,carbs:8,fat:3},
+  {name:"Pho juha s govedinom",unit:"g",baseAmount:400,kcal:355,protein:25,carbs:42,fat:8},
+  {name:"Ramen (piletina)",unit:"g",baseAmount:400,kcal:485,protein:25,carbs:59,fat:15},
+  {name:"Bouillabaisse",unit:"g",baseAmount:300,kcal:175,protein:18,carbs:8,fat:8},
+  {name:"Čorba od cikle",unit:"ml",baseAmount:300,kcal:88,protein:2.5,carbs:18,fat:0.5},
+  {name:"Pivo (0.33l)",unit:"ml",baseAmount:330,kcal:142,protein:1.1,carbs:13,fat:0},
+  {name:"Vino bijelo (čaša)",unit:"ml",baseAmount:150,kcal:121,protein:0.1,carbs:4,fat:0},
+  {name:"Vino crveno (čaša)",unit:"ml",baseAmount:150,kcal:127,protein:0.1,carbs:4.2,fat:0},
+  {name:"Prosecco (čaša)",unit:"ml",baseAmount:150,kcal:108,protein:0.3,carbs:5,fat:0},
+  {name:"Rakija (1 čašica)",unit:"ml",baseAmount:30,kcal:66,protein:0,carbs:0,fat:0},
+  {name:"Viski (1 čašica)",unit:"ml",baseAmount:40,kcal:95,protein:0,carbs:0,fat:0},
+  {name:"Gin (1 čašica)",unit:"ml",baseAmount:40,kcal:97,protein:0,carbs:0,fat:0},
+  {name:"Vodka (1 čašica)",unit:"ml",baseAmount:40,kcal:97,protein:0,carbs:0,fat:0},
+  {name:"Rum (1 čašica)",unit:"ml",baseAmount:40,kcal:97,protein:0,carbs:0,fat:0},
+  {name:"Soba rezanci (kuhani)",unit:"g",baseAmount:100,kcal:99,protein:5,carbs:21,fat:0.1},
+  {name:"Udon rezanci (kuhani)",unit:"g",baseAmount:100,kcal:132,protein:3.4,carbs:27,fat:0.6},
+  {name:"Rice paper (suhi)",unit:"g",baseAmount:10,kcal:36,protein:0.3,carbs:8.4,fat:0.1},
+  {name:"Dashi juha",unit:"ml",baseAmount:200,kcal:14,protein:2.4,carbs:0.4,fat:0.3},
+  {name:"Teriyaki umak",unit:"ml",baseAmount:15,kcal:30,protein:0.7,carbs:6.7,fat:0.1},
+  {name:"Oyster umak",unit:"ml",baseAmount:15,kcal:18,protein:0.4,carbs:4.5,fat:0},
+  {name:"Hoisin umak",unit:"ml",baseAmount:15,kcal:35,protein:0.5,carbs:7,fat:0.6},
+  {name:"Coconut milk (konzerva)",unit:"ml",baseAmount:50,kcal:90,protein:0.9,carbs:2,fat:9.5},
+  {name:"Coconut cream",unit:"ml",baseAmount:50,kcal:110,protein:1,carbs:2.8,fat:12},
+  {name:"Curry paste crveni",unit:"g",baseAmount:15,kcal:25,protein:0.7,carbs:3.5,fat:1.1},
+  {name:"Kimchi fried rice",unit:"g",baseAmount:200,kcal:290,protein:7,carbs:52,fat:6},
+  {name:"Bibimbap",unit:"g",baseAmount:350,kcal:490,protein:20,carbs:78,fat:10},
+  {name:"Risotto bianco",unit:"g",baseAmount:200,kcal:290,protein:6,carbs:52,fat:6},
+  {name:"Osso buco",unit:"g",baseAmount:250,kcal:380,protein:30,carbs:12,fat:24},
+  {name:"Saltimbocca",unit:"g",baseAmount:150,kcal:310,protein:30,carbs:2,fat:20},
+  {name:"Vitello tonnato",unit:"g",baseAmount:150,kcal:350,protein:26,carbs:6,fat:24},
+  {name:"Gnocchi s pestom",unit:"g",baseAmount:200,kcal:380,protein:10,carbs:52,fat:16},
+  {name:"Focaccia pomodoro",unit:"g",baseAmount:100,kcal:257,protein:7,carbs:38,fat:9},
+  {name:"Bruschetta al pomodoro",unit:"g",baseAmount:100,kcal:193,protein:6,carbs:32,fat:5},
+  {name:"Insalata caprese",unit:"g",baseAmount:150,kcal:230,protein:13,carbs:5,fat:18},
+  {name:"Panzanella",unit:"g",baseAmount:150,kcal:200,protein:5,carbs:26,fat:9},
+  {name:"Moussaka",unit:"g",baseAmount:250,kcal:380,protein:22,carbs:28,fat:22},
+  {name:"Greek salad",unit:"g",baseAmount:200,kcal:155,protein:4.5,carbs:10,fat:11},
+  {name:"Spanakopita",unit:"g",baseAmount:100,kcal:260,protein:8.5,carbs:25,fat:14},
+  {name:"Falafel",unit:"kom",baseAmount:1,kcal:57,protein:2.3,carbs:5.4,fat:3.2},
+  {name:"Shawarma piletina",unit:"g",baseAmount:150,kcal:285,protein:24,carbs:14,fat:15},
+  {name:"Kofta",unit:"kom",baseAmount:1,kcal:78,protein:6,carbs:2,fat:5},
+  {name:"Dolmades (nadjeveno lišće)",unit:"kom",baseAmount:1,kcal:58,protein:1.5,carbs:7,fat:2.8},
+  {name:"Fattoush salata",unit:"g",baseAmount:150,kcal:115,protein:2.5,carbs:15,fat:5.5},
 ];
 
 const DIGEST_SYMPTOMS = ["Nadutost","Mučnina","Refluks","Bol u trbuhu","Žgaravica","Umor","Dijareja","Opstipacija","Grčevi","Vjetrovi"];
@@ -1383,18 +1828,220 @@ function StravaTab(){
   );
 }
 
+
+// ─── Dashboard tab ────────────────────────────────────────────────────────────
+function DashboardTab({nutrition,digestion,weight,setTab}){
+  const tod=today();
+  const yday=toDS(new Date(new Date().setDate(new Date().getDate()-1)));
+
+  // Today nutrition
+  const todayFood=nutrition.filter(n=>n.date===tod);
+  const todayKcal=Math.round(todayFood.reduce((a,n)=>a+n.kcal,0));
+  const todayProtein=Math.round(todayFood.reduce((a,n)=>a+n.protein,0));
+  const todayCarbs=Math.round(todayFood.reduce((a,n)=>a+n.carbs,0));
+  const todayFat=Math.round(todayFood.reduce((a,n)=>a+n.fat,0));
+  const goal=()=>{try{return+localStorage.getItem("kcal_goal")||2000;}catch{return 2000;}};
+  const kcalGoal=goal();
+  const kcalPct=Math.min(100,Math.round(todayKcal/kcalGoal*100));
+
+  // Last digestion entry
+  const lastDig=[...digestion].sort((a,b)=>b.date.localeCompare(a.date)||b.time?.localeCompare(a.time||"")||0)[0];
+  const todayDig=digestion.filter(d=>d.date===tod);
+  const avgWater=todayDig.length?Math.round(todayDig.reduce((a,d)=>a+d.water,0)/todayDig.length):0;
+  const avgEnergy=todayDig.length?+(todayDig.reduce((a,d)=>a+d.energy,0)/todayDig.length).toFixed(1):null;
+  const todayLoper=todayDig.some(d=>d.loperamide);
+  const todayNoStool=todayDig.some(d=>d.no_stool);
+
+  // Weight
+  const sortedW=[...weight].sort((a,b)=>a.date.localeCompare(b.date));
+  const latestW=sortedW[sortedW.length-1];
+  const prevW=sortedW[sortedW.length-2];
+  const wDiff=latestW&&prevW?+(latestW.kg-prevW.kg).toFixed(1):null;
+  const firstW=sortedW[0];
+  const totalDiff=latestW&&firstW&&latestW!==firstW?+(latestW.kg-firstW.kg).toFixed(1):null;
+
+  // Last 7 days kcal
+  const last7=Array.from({length:7},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-(6-i));
+    const ds=toDS(d);
+    const kcal=Math.round(nutrition.filter(n=>n.date===ds).reduce((a,n)=>a+n.kcal,0));
+    return{ds,kcal,day:d.toLocaleDateString("hr-HR",{weekday:"short"})};
+  });
+  const maxKcal=Math.max(...last7.map(d=>d.kcal),1);
+
+  // Streak — consecutive days with any food logged
+  let streak=0;
+  for(let i=0;;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=toDS(d);
+    if(nutrition.some(n=>n.date===ds))streak++;
+    else break;
+  }
+
+  // Recent digestion days for mini heatmap
+  const last14=Array.from({length:14},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-(13-i));
+    const ds=toDS(d);
+    const digs=digestion.filter(e=>e.date===ds);
+    const hasNoStool=digs.some(e=>e.no_stool);
+    const hasLoper=digs.some(e=>e.loperamide);
+    const avgPain=digs.length?digs.reduce((a,e)=>a+e.pain,0)/digs.length:null;
+    return{ds,digs,hasNoStool,hasLoper,avgPain,day:d.toLocaleDateString("hr-HR",{weekday:"short"})};
+  });
+
+  return(
+    <div>
+      {/* Greeting */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'Fraunces',serif",fontSize:26,fontWeight:300,color:"#1a1a18",letterSpacing:"-.5px"}}>
+          {new Date().getHours()<12?"Dobro jutro ☀️":new Date().getHours()<18?"Dobar dan 👋":"Dobra večer 🌙"}
+        </div>
+        <div style={{fontSize:13,color:"#aaa",marginTop:2}}>{new Date().toLocaleDateString("hr-HR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+      </div>
+
+      {/* Kcal today */}
+      <div className="card" style={{marginBottom:12,cursor:"pointer"}} onClick={()=>setTab("nutrition")}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+          <div>
+            <div className="lbl">Kalorije danas</div>
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:32,fontWeight:300,color:kcalPct>=100?"#d85a30":"#1a1a18",lineHeight:1}}>
+              {todayKcal}<span style={{fontSize:16,color:"#aaa",fontFamily:"'DM Sans',sans-serif",fontWeight:400}}> / {kcalGoal}</span>
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            {streak>0&&<div style={{fontSize:12,color:"#0f6e56",fontWeight:500}}>🔥 {streak} dan{streak===1?"":"a"} zaredom</div>}
+            <div style={{fontSize:11,color:"#aaa",marginTop:4}}>{todayFood.length} obroka</div>
+          </div>
+        </div>
+        <div style={{height:6,background:"#f0ede8",borderRadius:99,overflow:"hidden",marginBottom:10}}>
+          <div style={{height:"100%",width:`${kcalPct}%`,background:kcalPct>=100?"#d85a30":kcalPct>=80?"#ba7517":"#1d9e75",borderRadius:99,transition:"width .4s"}}/>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          {[{l:"P",v:todayProtein,c:"#378add"},{l:"U",v:todayCarbs,c:"#ba7517"},{l:"M",v:todayFat,c:"#1d9e75"}].map(m=>(
+            <div key={m.l} style={{flex:1,background:"#f5f3ef",borderRadius:10,padding:"8px 10px"}}>
+              <div style={{fontSize:10,color:"#aaa",textTransform:"uppercase",letterSpacing:".6px"}}>{m.l}</div>
+              <div style={{fontSize:16,fontWeight:500,color:m.c,fontFamily:"'Fraunces',serif"}}>{m.v}g</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Kalorije 7 dana mini bar chart */}
+      <div className="card" style={{marginBottom:12,cursor:"pointer"}} onClick={()=>setTab("stats")}>
+        <div className="lbl">Kalorije — zadnjih 7 dana</div>
+        <div style={{display:"flex",align:"flex-end",gap:4,height:60,alignItems:"flex-end",marginTop:8}}>
+          {last7.map((d,i)=>(
+            <div key={d.ds} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+              <div style={{fontSize:9,color:d.ds===tod?"#1d9e75":"#ccc",fontWeight:d.ds===tod?600:400}}>{d.kcal>0?d.kcal:""}</div>
+              <div style={{width:"100%",background:d.ds===tod?"#1d9e75":d.kcal>0?"#d4d1cb":"#f0ede8",borderRadius:"4px 4px 0 0",height:`${d.kcal>0?Math.max(8,Math.round(d.kcal/maxKcal*44)):4}px`,transition:"height .4s"}}/>
+              <div style={{fontSize:9,color:d.ds===tod?"#1a1a18":"#bbb",fontWeight:d.ds===tod?600:400}}>{d.day}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+        {/* Kilaža */}
+        <div className="card" style={{cursor:"pointer",margin:0}} onClick={()=>setTab("weight")}>
+          <div className="lbl">Kilaža</div>
+          {latestW
+            ?<>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:28,fontWeight:300,color:"#0f6e56",lineHeight:1}}>{latestW.kg}<span style={{fontSize:13,color:"#aaa",fontFamily:"'DM Sans',sans-serif"}}> kg</span></div>
+              <div style={{fontSize:12,marginTop:4}}>
+                {wDiff!==null&&<span style={{color:wDiff>0?"#d85a30":wDiff<0?"#0f6e56":"#aaa",fontWeight:500}}>{wDiff>0?"+":""}{wDiff} kg</span>}
+                {totalDiff!==null&&<span style={{color:"#bbb",marginLeft:6}}>({totalDiff>0?"+":""}{totalDiff} ukupno)</span>}
+              </div>
+              <div style={{fontSize:11,color:"#bbb",marginTop:2}}>{fmtShort(latestW.date)}</div>
+            </>
+            :<div style={{fontSize:13,color:"#bbb",marginTop:8}}>Nema mjerenja</div>
+          }
+        </div>
+
+        {/* Probava danas */}
+        <div className="card" style={{cursor:"pointer",margin:0}} onClick={()=>setTab("digestion")}>
+          <div className="lbl">Probava danas</div>
+          {todayDig.length>0
+            ?<>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4,marginBottom:6}}>
+                {todayNoStool&&<span className="bx bred">Bez stolice</span>}
+                {todayLoper&&<span className="bx bred">💊</span>}
+                {!todayNoStool&&!todayLoper&&<span className="bx bt">{todayDig.length} {todayDig.length===1?"unos":"unosa"}</span>}
+              </div>
+              <div style={{fontSize:12,color:"#888"}}>
+                {avgEnergy!==null&&<div>Energija: <b style={{color:"#0f6e56"}}>{avgEnergy}/5</b></div>}
+                <div>Vode: <b style={{color:"#378add"}}>{avgWater} čaša</b></div>
+              </div>
+            </>
+            :<div style={{fontSize:13,color:"#bbb",marginTop:8}}>Nema unosa danas</div>
+          }
+        </div>
+      </div>
+
+      {/* Probava 14 dana heatmap */}
+      <div className="card" style={{marginBottom:12,cursor:"pointer"}} onClick={()=>setTab("digestion")}>
+        <div className="lbl">Probava — zadnjih 14 dana</div>
+        <div style={{display:"flex",gap:3,marginTop:8,flexWrap:"wrap"}}>
+          {last14.map(d=>{
+            let bg="#f0ede8"; let title="Nema unosa";
+            if(d.hasNoStool){bg="#f5c4b3";title="Bez stolice";}
+            else if(d.hasLoper){bg="#fca5a5";title="Loperamid";}
+            else if(d.digs.length>0&&d.avgPain!==null){
+              const p=d.avgPain;
+              bg=p<=2?"#9fe1cb":p<=5?"#fde68a":"#fca5a5";
+              title=`Bol ${p.toFixed(1)}/10`;
+            }
+            return(
+              <div key={d.ds} title={title} style={{flex:"1 1 calc(14% - 3px)",minWidth:18}}>
+                <div style={{height:28,borderRadius:6,background:bg}}/>
+                <div style={{fontSize:8,color:"#bbb",textAlign:"center",marginTop:2}}>{d.day}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
+          {[{c:"#9fe1cb",l:"Dobro"},{c:"#fde68a",l:"Umjereno"},{c:"#fca5a5",l:"Loše/Loper"},{c:"#f5c4b3",l:"Bez stolice"},{c:"#f0ede8",l:"Nema unosa"}].map(x=>(
+            <div key={x.l} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#aaa"}}>
+              <div style={{width:10,height:10,borderRadius:3,background:x.c,flexShrink:0}}/>
+              {x.l}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="card">
+        <div className="lbl">Brzi unos</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+          {[
+            {icon:"🥗",l:"Dodaj obrok",tab:"nutrition"},
+            {icon:"🫁",l:"Unesi probavu",tab:"digestion"},
+            {icon:"⚖️",l:"Unesi kilažu",tab:"weight"},
+            {icon:"🏃",l:"Trčanje",tab:"strava"},
+          ].map(a=>(
+            <button key={a.tab} onClick={()=>setTab(a.tab)}
+              style={{padding:"14px 12px",borderRadius:12,border:"1.5px solid #e8e5df",background:"#fafaf8",cursor:"pointer",fontSize:13,fontWeight:500,color:"#1a1a18",display:"flex",alignItems:"center",gap:10,WebkitTapHighlightColor:"transparent",transition:"all .12s"}}>
+              <span style={{fontSize:22}}>{a.icon}</span>{a.l}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App(){
-  const [tab,setTab]=useState("nutrition");
+  const [tab,setTab]=useState("dashboard");
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"strava",l:"Trčanje",icon:"🟠"}];
+  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
     ?<div style={{textAlign:"center",padding:"50px 0",color:"#bbb",fontSize:14}}>Učitavanje...</div>
     :<>
+      {tab==="dashboard"&&<DashboardTab nutrition={nutrition} digestion={digestion} weight={weight} setTab={setTab}/>}
       {tab==="nutrition"&&<NutritionTab nutrition={nutrition} customFoods={customFoods} addNutrition={addNutrition} addCustomFood={addCustomFood} removeNutrition={removeNutrition} updateNutrition={updateNutrition}/>}
       {tab==="digestion"&&<DigestionTab digestion={digestion} addDigestion={addDigestion} removeDigestion={removeDigestion}/>}
       {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
