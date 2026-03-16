@@ -1165,13 +1165,231 @@ function StatsTab({nutrition,digestion}){
   );
 }
 
+
+// ─── Strava tab ───────────────────────────────────────────────────────────────
+const STRAVA_CLIENT_ID = "212460";
+const STRAVA_CLIENT_SECRET = "e53812eb6c267609d816ae1cfa83de9efe338c77";
+const STRAVA_REFRESH_TOKEN = "8614dadefd366c8b747c8b70e4627168a7c46bce";
+
+const SPORT_ICONS = {
+  "Run":"🏃","VirtualRun":"🏃","TrailRun":"🏃",
+  "Ride":"🚴","VirtualRide":"🚴","MountainBikeRide":"🚵","EBikeRide":"🚴",
+  "Swim":"🏊","Walk":"🚶","Hike":"🥾",
+  "WeightTraining":"🏋️","Workout":"💪","Crossfit":"💪","Yoga":"🧘",
+  "Soccer":"⚽","Tennis":"🎾","Basketball":"🏀","Golf":"⛳",
+  "Skiing":"⛷️","Snowboard":"🏂","IceSkate":"⛸️",
+  "Kayaking":"🛶","Surfing":"🏄","Rowing":"🚣",
+};
+const SPORT_HR = {
+  "Run":"Trčanje","VirtualRun":"Virtualno trčanje","TrailRun":"Trail trčanje",
+  "Ride":"Vožnja biciklom","VirtualRide":"Virtualna vožnja","MountainBikeRide":"MTB","EBikeRide":"E-bike",
+  "Swim":"Plivanje","Walk":"Hodanje","Hike":"Planinarenje",
+  "WeightTraining":"Teretana","Workout":"Trening","Crossfit":"CrossFit","Yoga":"Yoga",
+  "Soccer":"Nogomet","Tennis":"Tenis","Basketball":"Košarka","Golf":"Golf",
+  "Skiing":"Skijanje","Snowboard":"Snowboard","IceSkate":"Klizanje",
+  "Kayaking":"Kajak","Surfing":"Surfanje","Rowing":"Veslanje",
+};
+
+function fmtDuration(s){
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const sec=s%60;
+  if(h>0)return`${h}h ${m}min`;
+  return`${m}min ${sec}s`;
+}
+function fmtPace(mps){
+  if(!mps||mps===0)return"-";
+  const spm=1000/mps;
+  const m=Math.floor(spm/60);
+  const s=Math.round(spm%60);
+  return`${m}:${String(s).padStart(2,"0")} /km`;
+}
+function fmtSpeed(mps){
+  if(!mps||mps===0)return"-";
+  return`${(mps*3.6).toFixed(1)} km/h`;
+}
+function fmtDist(m){
+  if(m>=1000)return`${(m/1000).toFixed(2)} km`;
+  return`${Math.round(m)} m`;
+}
+function fmtDate(s){
+  return new Date(s).toLocaleDateString("hr-HR",{day:"numeric",month:"long",year:"numeric"});
+}
+
+async function getStravaToken(){
+  try{
+    const r=await fetch("https://www.strava.com/oauth/token",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({client_id:STRAVA_CLIENT_ID,client_secret:STRAVA_CLIENT_SECRET,refresh_token:STRAVA_REFRESH_TOKEN,grant_type:"refresh_token"})
+    });
+    const d=await r.json();
+    return d.access_token;
+  }catch(e){return null;}
+}
+
+function StravaTab(){
+  const [activities,setActivities]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState(null);
+  const [page,setPage]=useState(1);
+  const [hasMore,setHasMore]=useState(true);
+  const [loadingMore,setLoadingMore]=useState(false);
+  const [selAct,setSelAct]=useState(null);
+  const [athlete,setAthlete]=useState(null);
+  const PER_PAGE=20;
+
+  useEffect(()=>{
+    (async()=>{
+      setLoading(true);setError(null);
+      const token=await getStravaToken();
+      if(!token){setError("Ne mogu dohvatiti Strava token.");setLoading(false);return;}
+      try{
+        const [actR,athR]=await Promise.all([
+          fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=${PER_PAGE}&page=1`,{headers:{Authorization:`Bearer ${token}`}}),
+          fetch("https://www.strava.com/api/v3/athlete",{headers:{Authorization:`Bearer ${token}`}})
+        ]);
+        const acts=await actR.json();
+        const ath=await athR.json();
+        if(!Array.isArray(acts)){setError("Greška pri dohvatu aktivnosti.");setLoading(false);return;}
+        setActivities(acts);
+        setAthlete(ath);
+        setHasMore(acts.length===PER_PAGE);
+      }catch(e){setError("Greška: "+e.message);}
+      setLoading(false);
+    })();
+  },[]);
+
+  async function loadMore(){
+    setLoadingMore(true);
+    const token=await getStravaToken();
+    if(!token){setLoadingMore(false);return;}
+    const nextPage=page+1;
+    const r=await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=${PER_PAGE}&page=${nextPage}`,{headers:{Authorization:`Bearer ${token}`}});
+    const more=await r.json();
+    if(Array.isArray(more)&&more.length>0){
+      setActivities(p=>[...p,...more]);
+      setPage(nextPage);
+      setHasMore(more.length===PER_PAGE);
+    }else{setHasMore(false);}
+    setLoadingMore(false);
+  }
+
+  // summary stats
+  const totalDist=activities.reduce((a,x)=>a+x.distance,0);
+  const totalTime=activities.reduce((a,x)=>a+x.moving_time,0);
+  const totalKcal=activities.reduce((a,x)=>a+(x.calories||0),0);
+  const runs=activities.filter(a=>a.type==="Run"||a.sport_type==="Run");
+  const rides=activities.filter(a=>a.type==="Ride"||a.sport_type==="Ride");
+
+  if(loading)return(
+    <div style={{textAlign:"center",padding:"60px 0"}}>
+      <div style={{width:36,height:36,border:"3px solid #e8e5df",borderTopColor:"#fc4c02",borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 12px"}}/>
+      <div style={{color:"#aaa",fontSize:14}}>Dohvaćam Strava aktivnosti...</div>
+    </div>
+  );
+
+  if(error)return<div style={{padding:20,background:"#fff0ec",borderRadius:14,color:"#993c1d",fontSize:14}}>{error}</div>;
+
+  return(
+    <div>
+      {/* Athlete header */}
+      {athlete&&(
+        <div className="card" style={{background:"linear-gradient(135deg,#fc4c02,#e8390a)",border:"none",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            {athlete.profile_medium&&<img src={athlete.profile_medium} alt="" style={{width:52,height:52,borderRadius:"50%",border:"2px solid rgba(255,255,255,.3)"}}/>}
+            <div>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:20,fontWeight:300,color:"#fff"}}>{athlete.firstname} {athlete.lastname}</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:2}}>Strava profil · {activities.length} aktivnosti učitano</div>
+            </div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Strava_Logo.svg" alt="Strava" style={{height:22,marginLeft:"auto",opacity:.8,filter:"brightness(0) invert(1)"}}/>
+          </div>
+        </div>
+      )}
+
+      {/* Summary stats */}
+      <div className="mrow" style={{gridTemplateColumns:"repeat(2,1fr)"}}>
+        {[
+          {l:"Ukupno km",v:(totalDist/1000).toFixed(0)+"km",c:"#fc4c02"},
+          {l:"Ukupno vrijeme",v:fmtDuration(totalTime),c:"#1a1a18"},
+          {l:"Kalorije",v:totalKcal>0?Math.round(totalKcal).toLocaleString()+" kcal":"-",c:"#993c1d"},
+          {l:"Trčanja / Vožnji",v:`${runs.length} / ${rides.length}`,c:"#0f6e56"},
+        ].map(m=>(
+          <div key={m.l} className="met">
+            <div className="met-l">{m.l}</div>
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:16,fontWeight:300,color:m.c,lineHeight:1.2,marginTop:2}}>{m.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity list */}
+      <div className="card" style={{padding:0,overflow:"hidden"}}>
+        {activities.map((act,i)=>{
+          const icon=SPORT_ICONS[act.sport_type||act.type]||"🏅";
+          const name=SPORT_HR[act.sport_type||act.type]||(act.sport_type||act.type);
+          const isRun=act.sport_type==="Run"||act.type==="Run";
+          const isRide=act.sport_type==="Ride"||act.type==="Ride";
+          const isOpen=selAct===act.id;
+          return(
+            <div key={act.id} style={{borderBottom:"1px solid #f5f3ef"}}>
+              <div style={{padding:"14px 16px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}} onClick={()=>setSelAct(isOpen?null:act.id)}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+                  <div style={{width:38,height:38,borderRadius:10,background:"#fff4f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:500,color:"#1a1a18",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{act.name}</div>
+                    <div style={{fontSize:12,color:"#aaa",marginTop:2}}>{name} · {fmtDate(act.start_date_local)}</div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontSize:15,fontWeight:300,fontFamily:"'Fraunces',serif",color:"#fc4c02"}}>{fmtDist(act.distance)}</div>
+                    <div style={{fontSize:11,color:"#aaa"}}>{fmtDuration(act.moving_time)}</div>
+                  </div>
+                </div>
+              </div>
+              {isOpen&&(
+                <div style={{padding:"0 16px 14px",borderTop:"1px solid #f8f6f2",animation:"si .15s ease"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
+                    {[
+                      {l:"Distanca",v:fmtDist(act.distance)},
+                      {l:"Vrijeme",v:fmtDuration(act.moving_time)},
+                      {l:isRun?"Tempo":"Brzina",v:isRun?fmtPace(act.average_speed):fmtSpeed(act.average_speed)},
+                      {l:"Visinska razlika",v:`${Math.round(act.total_elevation_gain)}m`},
+                      {l:"Kalorije",v:act.calories?`${Math.round(act.calories)} kcal`:"-"},
+                      {l:"Puls",v:act.average_heartrate?`${Math.round(act.average_heartrate)} bpm`:"-"},
+                    ].map(s=>(
+                      <div key={s.l} style={{background:"#fafaf8",borderRadius:10,padding:"10px 12px"}}>
+                        <div style={{fontSize:9.5,color:"#bbb",textTransform:"uppercase",letterSpacing:".6px",marginBottom:3}}>{s.l}</div>
+                        <div style={{fontSize:14,fontWeight:500,color:"#1a1a18"}}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {act.description&&<div style={{fontSize:13,color:"#888",fontStyle:"italic",marginTop:4}}>{act.description}</div>}
+                  <a href={`https://www.strava.com/activities/${act.id}`} target="_blank" rel="noreferrer"
+                    style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:10,padding:"8px 14px",background:"#fc4c02",color:"#fff",borderRadius:10,fontSize:13,fontWeight:500,textDecoration:"none"}}>
+                    Otvori na Stravi →
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {hasMore&&(
+        <button className="btn" style={{background:"#fc4c02",marginTop:8,opacity:loadingMore?0.6:1}} onClick={loadMore} disabled={loadingMore}>
+          {loadingMore?"Učitavanje...":"Učitaj još aktivnosti"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App(){
   const [tab,setTab]=useState("nutrition");
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"}];
+  const tabs=[{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"strava",l:"Trčanje",icon:"🟠"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
@@ -1181,6 +1399,7 @@ export default function App(){
       {tab==="digestion"&&<DigestionTab digestion={digestion} addDigestion={addDigestion} removeDigestion={removeDigestion}/>}
       {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
       {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
+      {tab==="strava"&&<StravaTab/>}
     </>;
 
   return(
