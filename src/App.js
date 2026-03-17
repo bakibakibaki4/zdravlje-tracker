@@ -1341,13 +1341,51 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
   );
 }
 
+// ─── SVG Line Chart ───────────────────────────────────────────────────────────
+function SvgLineChart({data,color="#1d9e75"}){
+  if(!data||data.length<2)return null;
+  const W=600,H=160,PL=8,PR=8,PT=16,PB=28;
+  const iW=W-PL-PR, iH=H-PT-PB;
+  const vals=data.map(d=>d.y);
+  const minV=Math.min(...vals), maxV=Math.max(...vals);
+  const rng=maxV-minV||1;
+  const px=(i)=>PL+i/(data.length-1)*iW;
+  const py=(v)=>PT+iH-(v-minV)/rng*iH;
+  const pts=data.map((d,i)=>({x:px(i),y:py(d.y),label:d.label,v:d.y}));
+  const path="M"+pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L");
+  const area=path+` L${pts[pts.length-1].x.toFixed(1)},${(PT+iH).toFixed(1)} L${pts[0].x.toFixed(1)},${(PT+iH).toFixed(1)} Z`;
+  // y axis ticks
+  const ticks=3;
+  const yTicks=Array.from({length:ticks},(_,i)=>minV+(maxV-minV)*i/(ticks-1));
+  // x labels — show max 6
+  const step=Math.ceil(data.length/6);
+  const xLabels=data.filter((_,i)=>i%step===0||i===data.length-1);
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",overflow:"visible"}}>
+      {yTicks.map((t,i)=>{
+        const y=py(t);
+        return<g key={i}>
+          <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#f0ede8" strokeWidth="1"/>
+          <text x={PL-2} y={y+4} textAnchor="end" fontSize="9" fill="#bbb">{t.toFixed(1)}</text>
+        </g>;
+      })}
+      <path d={area} fill={color} fillOpacity="0.08"/>
+      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+      {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="4" fill="#fff" stroke={color} strokeWidth="2"/>)}
+      {xLabels.map((d,i)=>{
+        const idx=data.indexOf(d);
+        return<text key={i} x={px(idx)} y={H-2} textAnchor="middle" fontSize="9" fill="#bbb">{d.label}</text>;
+      })}
+    </svg>
+  );
+}
+
 // ─── Weight tab ───────────────────────────────────────────────────────────────
 function WeightTab({weight,addWeight,removeWeight}){
   const [selDate,setSelDate]=useState(today());
   const [kg,setKg]=useState("");
   const [notes,setNotes]=useState("");
   const [saving,setSaving]=useState(false);
-  const {Chart}=window;
 
   const existing=weight.find(w=>w.date===selDate);
   useEffect(()=>{
@@ -1362,59 +1400,17 @@ function WeightTab({weight,addWeight,removeWeight}){
     setSaving(false);
   }
 
-  // stats
   const sorted=weight.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const latest=sorted[sorted.length-1];
   const oldest=sorted[0];
   const diff=latest&&oldest&&latest!==oldest?+(latest.kg-oldest.kg).toFixed(1):null;
-
-  // last 30 entries for chart
-  const chartData=sorted.slice(-30);
-
-  const wChartRef=useRef(null);
-  useEffect(()=>{
-    if(chartData.length<2)return;
-    const el=document.getElementById("wc1");
-    if(!el)return;
-    // Destroy previous instance if exists
-    if(wChartRef.current){wChartRef.current.destroy();wChartRef.current=null;}
-    // Also destroy any existing Chart.js instance on canvas
-    const existing=window.Chart&&window.Chart.getChart&&window.Chart.getChart(el);
-    if(existing)existing.destroy();
-    wChartRef.current=new window.Chart(el,{
-      type:"line",
-      data:{
-        labels:chartData.map(w=>fmtShort(w.date)),
-        datasets:[{
-          data:chartData.map(w=>w.kg),
-          borderColor:"#1d9e75",
-          backgroundColor:"rgba(29,158,117,0.08)",
-          tension:0.3,
-          pointRadius:4,
-          pointBackgroundColor:"#0f6e56",
-          fill:true,
-          borderWidth:2,
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{
-          y:{grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"},beginAtZero:false},
-          x:{grid:{display:false},ticks:{autoSkip:true,maxTicksLimit:8,font:{size:11},color:"#aaa",maxRotation:45}}
-        }
-      }
-    });
-    return()=>{if(wChartRef.current){wChartRef.current.destroy();wChartRef.current=null;}};
-  },[weight]);
-
+  const chartData=sorted.slice(-30).map(w=>({y:w.kg,label:fmtShort(w.date)}));
   const dots=weight.map(w=>w.date);
 
   return(
     <div>
       <Cal val={selDate} onChange={setSelDate} dots={dots}/>
 
-      {/* summary metrics */}
       {latest&&(
         <div className="mrow-2">
           <div className="met">
@@ -1433,7 +1429,6 @@ function WeightTab({weight,addWeight,removeWeight}){
         </div>
       )}
 
-      {/* input */}
       <div className="card">
         <div className="ttl">{existing?"Uredi mjerenje":"Unesi kilažu"}</div>
         <div style={{display:"flex",gap:10,alignItems:"flex-end",marginBottom:12}}>
@@ -1449,12 +1444,11 @@ function WeightTab({weight,addWeight,removeWeight}){
         </button>
       </div>
 
-      {/* chart */}
       {chartData.length>=2&&(
         <div className="card">
           <div className="ttl">Graf kilaže</div>
           <div style={{fontSize:12,color:"#aaa",marginBottom:8}}>Zadnjih {chartData.length} mjerenja</div>
-          <div className="wchart"><canvas id="wc1"></canvas></div>
+          <SvgLineChart data={chartData} color="#1d9e75"/>
         </div>
       )}
 
