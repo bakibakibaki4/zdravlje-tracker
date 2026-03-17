@@ -1371,10 +1371,17 @@ function WeightTab({weight,addWeight,removeWeight}){
   // last 30 entries for chart
   const chartData=sorted.slice(-30);
 
+  const wChartRef=useRef(null);
   useEffect(()=>{
     if(chartData.length<2)return;
-    const el=document.getElementById("wc1");if(!el)return;
-    const c=new Chart(el,{
+    const el=document.getElementById("wc1");
+    if(!el)return;
+    // Destroy previous instance if exists
+    if(wChartRef.current){wChartRef.current.destroy();wChartRef.current=null;}
+    // Also destroy any existing Chart.js instance on canvas
+    const existing=window.Chart&&window.Chart.getChart&&window.Chart.getChart(el);
+    if(existing)existing.destroy();
+    wChartRef.current=new window.Chart(el,{
       type:"line",
       data:{
         labels:chartData.map(w=>fmtShort(w.date)),
@@ -1398,7 +1405,7 @@ function WeightTab({weight,addWeight,removeWeight}){
         }
       }
     });
-    return()=>c.destroy();
+    return()=>{if(wChartRef.current){wChartRef.current.destroy();wChartRef.current=null;}};
   },[weight]);
 
   const dots=weight.map(w=>w.date);
@@ -1529,7 +1536,9 @@ function StatsTab({nutrition,digestion}){
     const charts=[];
     const mk=(id,type,datasets,extra={})=>{
       const el=document.getElementById(id);if(!el)return;
-      charts.push(new Chart(el,{type,data:{labels:lbl14,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"}},x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:11},color:"#aaa"}}},...extra}}));
+      const existing=window.Chart&&window.Chart.getChart&&window.Chart.getChart(el);
+      if(existing)existing.destroy();
+      charts.push(new window.Chart(el,{type,data:{labels:lbl14,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"}},x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:11},color:"#aaa"}}},...extra}}));
     };
     mk("gc1","bar",[{data:bd14.map(d=>d.kcal),backgroundColor:"#f0997b",borderRadius:5,borderSkipped:false}]);
     mk("gc2","bar",[{label:"P",data:bd14.map(d=>d.protein),backgroundColor:"#85b7eb",borderRadius:3,stack:"m"},{label:"U",data:bd14.map(d=>d.carbs),backgroundColor:"#ef9f27",borderRadius:3,stack:"m"},{label:"M",data:bd14.map(d=>d.fat),backgroundColor:"#97c459",borderRadius:3,stack:"m"}],{scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:11},color:"#aaa"}},y:{stacked:true,beginAtZero:true,grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"}}}});
