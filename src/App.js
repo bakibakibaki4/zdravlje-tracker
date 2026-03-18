@@ -1341,6 +1341,72 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
   );
 }
 
+
+function SvgBarChart({data,color="#f0997b"}){
+  if(!data||!data.length)return null;
+  const W=600,H=140,PL=28,PR=8,PT=8,PB=28;
+  const iW=W-PL-PR,iH=H-PT-PB;
+  const vals=data.map(d=>d.y);
+  const maxV=Math.max(...vals,1);
+  const barW=Math.max(2,iW/data.length*0.7);
+  const gap=iW/data.length;
+  const step=Math.ceil(data.length/7);
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto"}}>
+      <line x1={PL} y1={PT} x2={PL} y2={PT+iH} stroke="#f0ede8" strokeWidth="1"/>
+      <line x1={PL} y1={PT+iH} x2={W-PR} y2={PT+iH} stroke="#f0ede8" strokeWidth="1"/>
+      {[0,0.5,1].map((t,i)=>{
+        const v=(maxV*t).toFixed(0);
+        const y=PT+iH-t*iH;
+        return<g key={i}>
+          <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#f5f3ef" strokeWidth="1"/>
+          <text x={PL-3} y={y+4} textAnchor="end" fontSize="8" fill="#bbb">{v}</text>
+        </g>;
+      })}
+      {data.map((d,i)=>{
+        const x=PL+i*gap+gap/2-barW/2;
+        const h=Math.max(2,d.y/maxV*iH);
+        const y=PT+iH-h;
+        return<g key={i}>
+          <rect x={x} y={y} width={barW} height={h} rx="2" fill={d.color||color}/>
+          {i%step===0&&<text x={x+barW/2} y={H-2} textAnchor="middle" fontSize="8" fill="#bbb">{d.label}</text>}
+        </g>;
+      })}
+    </svg>
+  );
+}
+
+function SvgStackedBar({data}){
+  if(!data||!data.length)return null;
+  const W=600,H=140,PL=28,PR=8,PT=8,PB=28;
+  const iW=W-PL-PR,iH=H-PT-PB;
+  const maxV=Math.max(...data.map(d=>d.protein+d.carbs+d.fat),1);
+  const barW=Math.max(2,iW/data.length*0.7);
+  const gap=iW/data.length;
+  const step=Math.ceil(data.length/7);
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto"}}>
+      <line x1={PL} y1={PT+iH} x2={W-PR} y2={PT+iH} stroke="#f0ede8" strokeWidth="1"/>
+      {data.map((d,i)=>{
+        const x=PL+i*gap+gap/2-barW/2;
+        const total=d.protein+d.carbs+d.fat||0;
+        const hp=total>0?d.protein/maxV*iH:0;
+        const hc=total>0?d.carbs/maxV*iH:0;
+        const hf=total>0?d.fat/maxV*iH:0;
+        const yf=PT+iH-hf;
+        const yc=yf-hc;
+        const yp=yc-hp;
+        return<g key={i}>
+          {hf>0&&<rect x={x} y={yf} width={barW} height={hf} rx="1" fill="#97c459"/>}
+          {hc>0&&<rect x={x} y={yc} width={barW} height={hc} rx="1" fill="#ef9f27"/>}
+          {hp>0&&<rect x={x} y={yp} width={barW} height={hp} rx="1" fill="#85b7eb"/>}
+          {i%step===0&&<text x={x+barW/2} y={H-2} textAnchor="middle" fontSize="8" fill="#bbb">{d.label}</text>}
+        </g>;
+      })}
+    </svg>
+  );
+}
+
 // ─── SVG Line Chart ───────────────────────────────────────────────────────────
 function SvgLineChart({data,color="#1d9e75"}){
   if(!data||data.length<2)return null;
@@ -1391,7 +1457,7 @@ function WeightTab({weight,addWeight,removeWeight}){
   useEffect(()=>{
     if(existing){setKg(String(existing.kg));setNotes(existing.notes||"");}
     else{setKg("");setNotes("");}
-  },[selDate,existing?.id]);
+  },[selDate, weight]);
 
   async function submit(){
     if(!kg||isNaN(+kg))return;
@@ -1486,7 +1552,6 @@ function WeightTab({weight,addWeight,removeWeight}){
 // ─── Stats tab ────────────────────────────────────────────────────────────────
 function StatsTab({nutrition,digestion}){
   const [view,setView]=useState("week");
-  const {Chart}=window;
 
   function lastN(n){return Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(n-1-i));return toDS(d);});}
   const weeks=Array.from({length:8},(_,i)=>{
@@ -1525,20 +1590,7 @@ function StatsTab({nutrition,digestion}){
     return{kcal:Math.round(n.reduce((a,x)=>a+x.kcal,0)),protein:Math.round(n.reduce((a,x)=>a+x.protein,0)),carbs:Math.round(n.reduce((a,x)=>a+x.carbs,0)),fat:Math.round(n.reduce((a,x)=>a+x.fat,0)),pain:dg.length?+(dg.reduce((a,x)=>a+x.pain,0)/dg.length).toFixed(1):null,energy:dg.length?+(dg.reduce((a,x)=>a+x.energy,0)/dg.length).toFixed(1):null};
   });
 
-  useEffect(()=>{
-    if(view!=="charts")return;
-    const charts=[];
-    const mk=(id,type,datasets,extra={})=>{
-      const el=document.getElementById(id);if(!el)return;
-      const existing=window.Chart&&window.Chart.getChart&&window.Chart.getChart(el);
-      if(existing)existing.destroy();
-      charts.push(new window.Chart(el,{type,data:{labels:lbl14,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"}},x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:11},color:"#aaa"}}},...extra}}));
-    };
-    mk("gc1","bar",[{data:bd14.map(d=>d.kcal),backgroundColor:"#f0997b",borderRadius:5,borderSkipped:false}]);
-    mk("gc2","bar",[{label:"P",data:bd14.map(d=>d.protein),backgroundColor:"#85b7eb",borderRadius:3,stack:"m"},{label:"U",data:bd14.map(d=>d.carbs),backgroundColor:"#ef9f27",borderRadius:3,stack:"m"},{label:"M",data:bd14.map(d=>d.fat),backgroundColor:"#97c459",borderRadius:3,stack:"m"}],{scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:11},color:"#aaa"}},y:{stacked:true,beginAtZero:true,grid:{color:"rgba(0,0,0,.04)"},ticks:{font:{size:11},color:"#aaa"}}}});
-    mk("gc3","line",[{data:bd14.map(d=>d.pain),borderColor:"#d85a30",backgroundColor:"transparent",tension:.4,spanGaps:true,pointRadius:4,pointBackgroundColor:"#d85a30"},{data:bd14.map(d=>d.energy),borderColor:"#1d9e75",backgroundColor:"transparent",tension:.4,spanGaps:true,pointRadius:4,pointBackgroundColor:"#1d9e75"}]);
-    return()=>charts.forEach(c=>c.destroy());
-  },[view,nutrition,digestion]);
+  // No Chart.js — using SVG charts
 
   return(
     <div>
@@ -1600,13 +1652,29 @@ function StatsTab({nutrition,digestion}){
 
       {view==="charts"&&(
         <>
-          {[{id:"gc1",title:"Kalorije (zadnjih 14 dana)",legend:[{c:"#f0997b",l:"kcal"}]},{id:"gc2",title:"Makronutrijenti",legend:[{c:"#85b7eb",l:"Proteini"},{c:"#ef9f27",l:"Ugljikohidrati"},{c:"#97c459",l:"Masti"}]},{id:"gc3",title:"Bol i energija",legend:[{c:"#d85a30",l:"Bol (0-10)"},{c:"#1d9e75",l:"Energija (0-5)"}]}].map(({id,title,legend})=>(
-            <div key={id} className="card">
-              <div style={{fontFamily:"'Fraunces',serif",fontSize:16,fontWeight:300,marginBottom:8}}>{title}</div>
-              <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:10}}>{legend.map(l=><div key={l.l} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#888"}}><div style={{width:10,height:10,borderRadius:2,background:l.c}}/>{l.l}</div>)}</div>
-              <div style={{position:"relative",height:170}}><canvas id={id}></canvas></div>
+          <div className="card">
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:16,fontWeight:300,marginBottom:4}}>Kalorije (zadnjih 14 dana)</div>
+            <SvgBarChart data={bd14.map((d,i)=>({y:d.kcal,label:lbl14[i],color:"#f0997b"}))}/>
+          </div>
+          <div className="card">
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:16,fontWeight:300,marginBottom:4}}>Makronutrijenti</div>
+            <div style={{display:"flex",gap:12,marginBottom:8,flexWrap:"wrap"}}>
+              {[{c:"#85b7eb",l:"Proteini"},{c:"#ef9f27",l:"Ugljikohidrati"},{c:"#97c459",l:"Masti"}].map(x=>(
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#888"}}><div style={{width:8,height:8,borderRadius:2,background:x.c}}/>{x.l}</div>
+              ))}
             </div>
-          ))}
+            <SvgStackedBar data={bd14.map((d,i)=>({label:lbl14[i],protein:d.protein,carbs:d.carbs,fat:d.fat}))}/>
+          </div>
+          <div className="card">
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:16,fontWeight:300,marginBottom:4}}>Bol i energija</div>
+            <div style={{display:"flex",gap:12,marginBottom:8}}>
+              {[{c:"#d85a30",l:"Bol (0-10)"},{c:"#1d9e75",l:"Energija (0-5)"}].map(x=>(
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#888"}}><div style={{width:8,height:8,borderRadius:2,background:x.c}}/>{x.l}</div>
+              ))}
+            </div>
+            <SvgLineChart data={bd14.map((d,i)=>({y:d.pain??0,label:lbl14[i]}))} color="#d85a30"/>
+            <SvgLineChart data={bd14.map((d,i)=>({y:d.energy??0,label:lbl14[i]}))} color="#1d9e75"/>
+          </div>
         </>
       )}
     </div>
