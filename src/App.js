@@ -1187,7 +1187,6 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
   function toggleSym(s){setForm(f=>({...f,symptoms:f.symptoms.includes(s)?f.symptoms.filter(x=>x!==s):[...f.symptoms,s]}));}
 
   async function submit(){
-    if(!noStool&&!form.stool){alert("Molim odaberi tip stolice.");return;}
     setSaving(true);
     await addDigestion({...form,date:selDate,noStool});
     setForm({time:nowTime(),stool:"",symptoms:[],pain:0,bloating:0,notes:"",energy:0,water:0,loperamide:false});
