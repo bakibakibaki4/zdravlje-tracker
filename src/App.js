@@ -1072,7 +1072,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
             <span style={{fontSize:13,color:"#0f6e56",fontWeight:500,flex:"1 1 100%"}}>{sel.name}</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:13,color:"#0f6e56"}}>Količina:</span>
-              {(()=>{const isWeight=sel.unit==="g"||sel.unit==="ml";return<input type="number" className="qty-inp" value={qty} onChange={e=>setQty(Math.max(isWeight?1:1,+e.target.value))} min={isWeight?"1":"1"} step={isWeight?10:1} inputMode={isWeight?"decimal":"numeric"}/>;})()}
+              {(()=>{const isWeight=sel.unit==="g"||sel.unit==="ml";return<input type="number" className="qty-inp" value={qty===0?"":qty} onChange={e=>setQty(e.target.value===""?0:+e.target.value)} onFocus={e=>e.target.select()} step={isWeight?10:1} inputMode={isWeight?"decimal":"numeric"}/>;})()}
               <span style={{fontSize:13,color:"#085041",fontWeight:500}}>{sel.unit}</span>
             </div>
             {sp&&<span style={{fontSize:12,color:"#0d5c43",fontWeight:500,flex:"1 1 100%"}}>{Math.round(sp.kcal)} kcal · {Math.round(sp.protein)}g P · {Math.round(sp.carbs)}g U · {Math.round(sp.fat)}g M</span>}
@@ -1211,6 +1211,13 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
           {noStool?"✓ Nisam imao stolicu cijeli dan":"Nisam imao stolicu cijeli dan"}
         </button>
 
+        <button
+          className={`pill${form.loperamide?" red":""}`}
+          style={{marginBottom:14,fontSize:13}}
+          onClick={()=>setForm(f=>({...f,loperamide:!f.loperamide}))}>
+          💊 {form.loperamide?"✓ Uzeo sam Loperamid (Imodium)":"Uzeo sam Loperamid (Imodium)"}
+        </button>
+
         {!noStool&&(
           <>
             <div style={{marginBottom:14}}>
@@ -1232,13 +1239,7 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
         <span className="lbl">Simptomi</span>
         <div className="pills">{DIGEST_SYMPTOMS.map(s=><button key={s} className={`pill${form.symptoms.includes(s)?" c":""}`} onClick={()=>toggleSym(s)}>{s}</button>)}</div>
 
-        {/* Loperamide / Imodium toggle */}
-        <button
-          className={`pill${form.loperamide?" red":""}`}
-          style={{marginBottom:14,fontSize:13}}
-          onClick={()=>setForm(f=>({...f,loperamide:!f.loperamide}))}>
-          💊 {form.loperamide?"✓ Uzeo sam Loperamid (Imodium)":"Uzeo sam Loperamid (Imodium)"}
-        </button>
+
 
         {[{k:"pain",l:"Bol",max:10,c:"#d85a30",cls:"r-red"},{k:"bloating",l:"Nadutost",max:10,c:"#ba7517",cls:"r-amber"},{k:"energy",l:"Energija",max:5,c:"#1d9e75",cls:"r-green"},{k:"water",l:"Čaše vode",max:15,c:"#378add",cls:"r-blue"}].map(({k,l,max,c,cls})=>(
           <div key={k} className="rrow">
