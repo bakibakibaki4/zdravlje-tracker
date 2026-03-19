@@ -1179,7 +1179,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
 function DigestionTab({digestion,addDigestion,removeDigestion}){
   const [selDate,setSelDate]=useState(today());
   const [noStool,setNoStool]=useState(false);
-  const [form,setForm]=useState({time:nowTime(),stool:"3",symptoms:[],pain:0,bloating:0,notes:"",energy:0,water:0,loperamide:false});
+  const [form,setForm]=useState({time:nowTime(),stool:"",symptoms:[],pain:0,bloating:0,notes:"",energy:0,water:0,loperamide:false});
   const [saving,setSaving]=useState(false);
   const [openDay,setOpenDay]=useState(null);
 
@@ -1187,9 +1187,10 @@ function DigestionTab({digestion,addDigestion,removeDigestion}){
   function toggleSym(s){setForm(f=>({...f,symptoms:f.symptoms.includes(s)?f.symptoms.filter(x=>x!==s):[...f.symptoms,s]}));}
 
   async function submit(){
+    if(!noStool&&!form.stool){alert("Molim odaberi tip stolice.");return;}
     setSaving(true);
     await addDigestion({...form,date:selDate,noStool});
-    setForm({time:nowTime(),stool:"3",symptoms:[],pain:0,bloating:0,notes:"",energy:0,water:0,loperamide:false});
+    setForm({time:nowTime(),stool:"",symptoms:[],pain:0,bloating:0,notes:"",energy:0,water:0,loperamide:false});
     setNoStool(false);
     setSaving(false);
   }
