@@ -2399,10 +2399,11 @@ function JelovnikTab({nutrition,addNutrition}){
 
 
 // ─── Shopping tab ─────────────────────────────────────────────────────────────
+const SHOPPING_UID = "189bcf56-7374-4def-9790-9f20617601b2";
+
 function ShoppingTab(){
-  const [items,setItems]=useState(()=>{
-    try{return JSON.parse(localStorage.getItem("shopping_list")||"[]");}catch{return[];}
-  });
+  const [items,setItems]=useState([]);
+  const [loading,setLoading]=useState(true);
   const [input,setInput]=useState("");
   const [cat,setCat]=useState("Ostalo");
   const inputRef=React.useRef(null);
@@ -2410,21 +2411,45 @@ function ShoppingTab(){
   const CATS=["Meso i riba","Mliječni","Voće","Povrće","Žitarice i kruh","Smrznuto","Konzerve","Pića","Suplementi","Ostalo"];
   const CAT_ICONS={"Meso i riba":"🥩","Mliječni":"🥛","Voće":"🍎","Povrće":"🥦","Žitarice i kruh":"🍞","Smrznuto":"❄️","Konzerve":"🥫","Pića":"💧","Suplementi":"💊","Ostalo":"🛒"};
 
-  function save(list){setItems(list);try{localStorage.setItem("shopping_list",JSON.stringify(list));}catch{}}
+  useEffect(()=>{
+    (async()=>{
+      const{data}=await sb.from("shopping").select("*").eq("user_id",SHOPPING_UID).order("created_at",{ascending:true});
+      setItems(data||[]);
+      setLoading(false);
+    })();
+  },[]);
 
-  function add(){
+  async function add(){
     const name=input.trim();
     if(!name)return;
-    const newItem={id:Date.now(),name,cat,bought:false};
-    save([...items,newItem]);
+    const{data:d}=await sb.from("shopping").insert({user_id:SHOPPING_UID,name,cat,bought:false}).select().single();
+    if(d)setItems(p=>[...p,d]);
     setInput("");
     inputRef.current?.focus();
   }
 
-  function toggle(id){save(items.map(i=>i.id===id?{...i,bought:!i.bought}:i));}
-  function remove(id){save(items.filter(i=>i.id!==id));}
-  function removeBought(){save(items.filter(i=>!i.bought));}
-  function clearAll(){if(window.confirm("Obriši cijeli popis?"))save([]);}
+  async function toggle(id){
+    const item=items.find(i=>i.id===id);
+    const{data:d}=await sb.from("shopping").update({bought:!item.bought}).eq("id",id).select().single();
+    if(d)setItems(p=>p.map(i=>i.id===id?d:i));
+  }
+
+  async function remove(id){
+    await sb.from("shopping").delete().eq("id",id);
+    setItems(p=>p.filter(i=>i.id!==id));
+  }
+
+  async function removeBought(){
+    const bought=items.filter(i=>i.bought);
+    await Promise.all(bought.map(i=>sb.from("shopping").delete().eq("id",i.id)));
+    setItems(p=>p.filter(i=>!i.bought));
+  }
+
+  async function clearAll(){
+    if(!window.confirm("Obriši cijeli popis?"))return;
+    await sb.from("shopping").delete().eq("user_id",SHOPPING_UID);
+    setItems([]);
+  }
 
   // Group by category, bought items at bottom
   const notBought=items.filter(i=>!i.bought);
@@ -2481,7 +2506,8 @@ function ShoppingTab(){
         </div>
       )}
 
-      {items.length===0&&(
+      {loading&&<div style={{textAlign:"center",padding:"40px 0",color:"#bbb",fontSize:14}}>Učitavanje popisa...</div>}
+      {!loading&&items.length===0&&(
         <div style={{textAlign:"center",padding:"60px 0",color:"#bbb",fontSize:14}}>
           <div style={{fontSize:40,marginBottom:12}}>🛒</div>
           Popis je prazan.<br/>Dodaj prvu stavku gore.
