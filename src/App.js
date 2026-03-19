@@ -3104,7 +3104,7 @@ export default function App(){
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"shopping",l:"Dućan",icon:"🛒"},{id:"izvjestaj",l:"Izvještaj",icon:"📋"}];
+  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"shopping",l:"Dućan",icon:"🛒"},{id:"izvjestaj",l:"Izvještaj",icon:"📋"},{id:"stats",l:"Statistike",icon:"📊"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
