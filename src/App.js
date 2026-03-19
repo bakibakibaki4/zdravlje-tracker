@@ -2560,6 +2560,344 @@ function ShoppingTab(){
   );
 }
 
+
+// ─── Izvještaj tab ────────────────────────────────────────────────────────────
+const IZVJESTAJ_UID = "189bcf56-7374-4def-9790-9f20617601b2";
+
+function IzvjestajTab(){
+  const TJEDNI=Array.from({length:14},(_,i)=>`${["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV"][i]}.`);
+  const DANI=["Pon","Uto","Sri","Čet","Pet","Sub","Ned"];
+  const DANI_KEYS=["k_pon","k_uto","k_sri","k_cet","k_pet","k_sub","k_ned"];
+  const OCJENE=[
+    {k:"prehrana",l:"Dosljednost programu (prehrana)"},
+    {k:"trening",l:"Dosljednost programu (trening)"},
+    {k:"glad",l:"Glad"},
+    {k:"san",l:"San"},
+    {k:"energija",l:"Razina energije"},
+    {k:"probava",l:"Probava"},
+  ];
+
+  const emptyRow=(t)=>({
+    tjedan:t,
+    struk:"",kukovi:"",l_ruka:"",d_ruka:"",l_kvad:"",d_kvad:"",
+    k_pon:"",k_uto:"",k_sri:"",k_cet:"",k_pet:"",k_sub:"",k_ned:"",
+    o_prehrana:0,o_trening:0,o_glad:0,o_san:0,o_energija:0,o_probava:0,
+    izazov:"",bolje:"",
+  });
+
+  const [rows,setRows]=useState(()=>Object.fromEntries(TJEDNI.map(t=>[t,emptyRow(t)])));
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [view,setView]=useState("opseg");
+  const [selTj,setSelTj]=useState(TJEDNI[0]);
+
+  useEffect(()=>{
+    (async()=>{
+      const{data}=await sb.from("izvjestaj").select("*").eq("user_id",IZVJESTAJ_UID);
+      if(data&&data.length>0){
+        const map={...Object.fromEntries(TJEDNI.map(t=>[t,emptyRow(t)]))};
+        data.forEach(r=>{map[r.tjedan]={...emptyRow(r.tjedan),...r};});
+        setRows(map);
+      }
+      setLoading(false);
+    })();
+  },[]);
+
+  const saveTimer=React.useRef(null);
+
+  function upd(tj,field,val){
+    setRows(prev=>{
+      const next={...prev,[tj]:{...prev[tj],[field]:val}};
+      // debounced save
+      clearTimeout(saveTimer.current);
+      saveTimer.current=setTimeout(()=>saveRow(tj,next[tj]),800);
+      return next;
+    });
+  }
+
+  async function saveRow(tj,row){
+    setSaving(true);
+    await sb.from("izvjestaj").upsert({
+      user_id:IZVJESTAJ_UID,
+      tjedan:tj,
+      struk:row.struk||null,kukovi:row.kukovi||null,
+      l_ruka:row.l_ruka||null,d_ruka:row.d_ruka||null,
+      l_kvad:row.l_kvad||null,d_kvad:row.d_kvad||null,
+      k_pon:row.k_pon||null,k_uto:row.k_uto||null,k_sri:row.k_sri||null,
+      k_cet:row.k_cet||null,k_pet:row.k_pet||null,k_sub:row.k_sub||null,k_ned:row.k_ned||null,
+      o_prehrana:+row.o_prehrana||null,o_trening:+row.o_trening||null,
+      o_glad:+row.o_glad||null,o_san:+row.o_san||null,
+      o_energija:+row.o_energija||null,o_probava:+row.o_probava||null,
+      izazov:row.izazov||null,bolje:row.bolje||null,
+      updated_at:new Date().toISOString(),
+    },{onConflict:"user_id,tjedan"});
+    setSaving(false);
+  }
+
+  const r=rows[selTj]||emptyRow(selTj);
+
+  function avg(tj){
+    const row=rows[tj]||emptyRow(tj);
+    const vals=DANI_KEYS.map(k=>parseFloat(row[k]?.replace(",","."))).filter(v=>!isNaN(v)&&v>0);
+    if(!vals.length)return"-";
+    return(vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(1);
+  }
+
+  function exportCSV(){
+    const lines=[];
+    lines.push("MJERENJE OPSEGA");
+    lines.push("Tjedan,Struk (pupak),Kukovi (najširi),L ruka,D ruka,L kvadriceps,D kvadriceps");
+    TJEDNI.forEach(t=>{
+      const o=rows[t]||emptyRow(t);
+      lines.push(`${t},${o.struk},${o.kukovi},${o.l_ruka},${o.d_ruka},${o.l_kvad},${o.d_kvad}`);
+    });
+    lines.push("");
+    lines.push("KRETANJE KILAŽE");
+    lines.push("Tjedan,Pon,Uto,Sri,Čet,Pet,Sub,Ned,Prosjek");
+    TJEDNI.forEach(t=>{
+      const o=rows[t]||emptyRow(t);
+      lines.push(`${t},${DANI_KEYS.map(k=>o[k]).join(",")},${avg(t)}`);
+    });
+    lines.push("");
+    lines.push("OCJENE I BILJEŠKE");
+    lines.push("Tjedan,"+OCJENE.map(o=>o.l).join(",")+",Najveći izazov,Što bolje?");
+    TJEDNI.forEach(t=>{
+      const o=rows[t]||emptyRow(t);
+      lines.push(`${t},${OCJENE.map(x=>o["o_"+x.k]).join(",")},"${o.izazov}","${o.bolje}"`);
+    });
+    const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="tjedni_izvjestaj.csv";
+    a.click();
+  }
+
+  async function reset(){if(!window.confirm("Obriši sve podatke u izvještaju?"))return;await sb.from("izvjestaj").delete().eq("user_id",IZVJESTAJ_UID);setRows(Object.fromEntries(TJEDNI.map(t=>[t,emptyRow(t)])));}
+
+  const inp={padding:"8px 6px",border:"1.5px solid #e8e5df",borderRadius:8,fontSize:14,width:"100%",outline:"none",textAlign:"center",background:"#fafaf8",WebkitAppearance:"none"};
+  const inpFocus=(e)=>{e.target.style.borderColor="#1d9e75";e.target.style.background="#fff";};
+  const inpBlur=(e)=>{e.target.style.borderColor="#e8e5df";e.target.style.background="#fafaf8";};
+
+  return(
+    <div>
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <div style={{fontFamily:"'Fraunces',serif",fontSize:22,fontWeight:300,color:"#1a1a18",letterSpacing:"-.5px"}}>Tjedni izvještaj</div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {saving&&<span style={{fontSize:11,color:"#aaa"}}>Spremanje...</span>}
+          {loading&&<span style={{fontSize:11,color:"#aaa"}}>Učitavanje...</span>}
+          <button className="btn btn-g" style={{padding:"8px 14px",fontSize:13,width:"auto"}} onClick={exportCSV}>↓ CSV</button>
+          <button className="btn btn-ghost" style={{padding:"8px 14px",fontSize:13,width:"auto",color:"#d85a30",borderColor:"#fca5a5"}} onClick={reset}>Resetiraj</button>
+        </div>
+      </div>
+
+      {/* View switcher */}
+      <div className="pills" style={{marginBottom:14}}>
+        {[{id:"opseg",l:"📏 Opsezi"},{id:"kilaza",l:"⚖️ Kilaža"},{id:"ocjene",l:"📝 Ocjene"}].map(v=>(
+          <button key={v.id} className={`pill${view===v.id?" dk":""}`} onClick={()=>setView(v.id)}>{v.l}</button>
+        ))}
+      </div>
+
+      {/* Week selector */}
+      <div style={{marginBottom:14}}>
+        <span className="lbl">Tjedan</span>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {TJEDNI.map(t=>(
+            <button key={t} className={`pill${selTj===t?" dk":""}`} style={{fontSize:12,padding:"6px 11px"}} onClick={()=>setSelTj(t)}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── OPSEG ── */}
+      {view==="opseg"&&(
+        <div className="card">
+          <div className="ttl">Mjerenje opsega — {selTj} tjedan</div>
+          <div style={{fontSize:11,color:"#aaa",marginBottom:14}}>Mjeri ujutro prije prvog obroka, na stisnute mišiće (cm)</div>
+          {[
+            {k:"struk",l:"Struk (kod pupka)"},
+            {k:"kukovi",l:"Kukovi (najširi dio)"},
+            {k:"lRuka",l:"L ruka (najveći dio)"},
+            {k:"dRuka",l:"D ruka (najveći dio)"},
+            {k:"lKvad",l:"L kvadriceps (sredina)"},
+            {k:"dKvad",l:"D kvadriceps (sredina)"},
+          ].map(f=>(
+            <div key={f.k} style={{marginBottom:12}}>
+              <span className="lbl">{f.l}</span>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0.0"
+                  value={r[{struk:'struk',kukovi:'kukovi',lRuka:'l_ruka',dRuka:'d_ruka',lKvad:'l_kvad',dKvad:'d_kvad'}[f.k]]||''}
+                  onChange={e=>upd(selTj,{struk:'struk',kukovi:'kukovi',lRuka:'l_ruka',dRuka:'d_ruka',lKvad:'l_kvad',dKvad:'d_kvad'}[f.k],e.target.value)}
+                  onFocus={inpFocus} onBlur={inpBlur}
+                  style={inp}
+                />
+                <span style={{fontSize:13,color:"#aaa",flexShrink:0}}>cm</span>
+              </div>
+            </div>
+          ))}
+
+          {/* Mini overview table */}
+          <div className="div"/>
+          <div className="lbl" style={{marginBottom:8}}>Pregled svih tjedana</div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#f5f3ef"}}>
+                  {["Tj.","Struk","Kukovi","L ruka","D ruka","L kvad","D kvad"].map(h=>(
+                    <th key={h} style={{padding:"6px 8px",textAlign:"center",fontWeight:600,color:"#666",whiteSpace:"nowrap"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {TJEDNI.map((t,i)=>{
+                  const o=(rows[t]||emptyRow(t));
+                  const hasData=['struk','kukovi','l_ruka','d_ruka','l_kvad','d_kvad'].some(k=>o[k]&&o[k]!=='');
+                  if(!hasData&&t!==selTj)return null;
+                  return(
+                    <tr key={t} style={{background:t===selTj?"#e1f5ee":"#fff",cursor:"pointer"}} onClick={()=>setSelTj(t)}>
+                      <td style={{padding:"7px 8px",textAlign:"center",fontWeight:600,color:t===selTj?"#0f6e56":"#1a1a18"}}>{t}</td>
+                      {[o.struk,o.kukovi,o.l_ruka,o.d_ruka,o.l_kvad,o.d_kvad].map((v,j)=>(
+                        <td key={j} style={{padding:"7px 8px",textAlign:"center",color:v?"#1a1a18":"#ddd"}}>{v||"—"}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── KILAŽA ── */}
+      {view==="kilaza"&&(
+        <div className="card">
+          <div className="ttl">Kretanje kilaže — {selTj} tjedan</div>
+          <div style={{fontSize:11,color:"#aaa",marginBottom:14}}>Upisuj uz decimalni zarez (npr. 85,4)</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+            {DANI.map(dn=>(
+              <div key={dn}>
+                <span className="lbl">{dn}</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="—"
+                  value={r[DANI_KEYS[DANI.indexOf(dn)]]}
+                  onChange={e=>upd(selTj,DANI_KEYS[DANI.indexOf(dn)],e.target.value)}
+                  onFocus={inpFocus} onBlur={inpBlur}
+                  style={{...inp,fontSize:15}}
+                />
+              </div>
+            ))}
+            <div>
+              <span className="lbl" style={{color:"#0f6e56"}}>Prosjek</span>
+              <div style={{padding:"8px 6px",background:"#e1f5ee",borderRadius:8,fontSize:15,fontWeight:600,color:"#0f6e56",textAlign:"center"}}>{avg(selTj)}</div>
+            </div>
+          </div>
+
+          {/* Overview table */}
+          <div className="div"/>
+          <div className="lbl" style={{marginBottom:8}}>Pregled svih tjedana</div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#f5f3ef"}}>
+                  {["Tj.",...DANI,"Prosjek"].map(h=>(
+                    <th key={h} style={{padding:"6px 8px",textAlign:"center",fontWeight:600,color:"#666"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {TJEDNI.map(t=>{
+                  const k=(rows[t]||emptyRow(t));
+                  const hasData=DANI_KEYS.some(dk=>k[dk]&&k[dk]!=='');
+                  if(!hasData&&t!==selTj)return null;
+                  return(
+                    <tr key={t} style={{background:t===selTj?"#e1f5ee":"#fff",cursor:"pointer"}} onClick={()=>setSelTj(t)}>
+                      <td style={{padding:"7px 8px",textAlign:"center",fontWeight:600,color:t===selTj?"#0f6e56":"#1a1a18"}}>{t}</td>
+                      {DANI.map(dn=>(
+                        <td key={dn} style={{padding:"7px 8px",textAlign:"center",color:k[dn]?"#1a1a18":"#ddd"}}>{k[dn]||"—"}</td>
+                      ))}
+                      <td style={{padding:"7px 8px",textAlign:"center",fontWeight:600,color:"#0f6e56"}}>{avg(t)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── OCJENE ── */}
+      {view==="ocjene"&&(
+        <div className="card">
+          <div className="ttl">Ocjene i bilješke — {selTj} tjedan</div>
+          <div style={{fontSize:11,color:"#aaa",marginBottom:16}}>Ocijeni od 1 do 10</div>
+          {OCJENE.map(o=>(
+            <div key={o.k} style={{marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <span style={{fontSize:13,color:"#555"}}>{o.l}</span>
+                <span style={{fontSize:18,fontWeight:300,fontFamily:"'Fraunces',serif",color:"#1d9e75",minWidth:28,textAlign:"right"}}>{+r['o_'+o.k]||"—"}</span>
+              </div>
+              <input
+                type="range" min={1} max={10} step={1}
+                className="r-green"
+                value={+r['o_'+o.k]||0}
+                style={{"--pct":`${((+r['o_'+o.k]||0)===0?0:((+r['o_'+o.k])-1)/9*100)}%`}}
+                onChange={e=>upd(selTj,'o_'+o.k,+e.target.value)}
+              />
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#ccc",marginTop:2}}>
+                <span>1</span><span>5</span><span>10</span>
+              </div>
+            </div>
+          ))}
+          <div className="div"/>
+          <div style={{marginBottom:12}}>
+            <span className="lbl">Što je bio tvoj najveći izazov ovaj tjedan?</span>
+            <textarea className="inp" rows={3} placeholder="Upiši..." value={r.izazov} onChange={e=>upd(selTj,'izazov',e.target.value)}/>
+          </div>
+          <div>
+            <span className="lbl">Što bi se idući tjedan moglo napraviti bolje ili drugačije?</span>
+            <textarea className="inp" rows={3} placeholder="Upiši..." value={r.bolje} onChange={e=>upd(selTj,'bolje',e.target.value)}/>
+          </div>
+
+          {/* Mini overview */}
+          <div className="div"/>
+          <div className="lbl" style={{marginBottom:8}}>Pregled ocjena</div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+              <thead>
+                <tr style={{background:"#f5f3ef"}}>
+                  <th style={{padding:"6px 8px",textAlign:"left",color:"#666"}}>Tj.</th>
+                  {OCJENE.map(o=><th key={o.k} style={{padding:"6px 4px",textAlign:"center",color:"#666",fontSize:10}}>{o.l.split(" ")[0]}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {TJEDNI.map(t=>{
+                  const o=(rows[t]||emptyRow(t));
+                  const hasData=OCJENE.some(x=>o['o_'+x.k]&&+o['o_'+x.k]>0);
+                  if(!hasData&&t!==selTj)return null;
+                  return(
+                    <tr key={t} style={{background:t===selTj?"#e1f5ee":"#fff",cursor:"pointer"}} onClick={()=>setSelTj(t)}>
+                      <td style={{padding:"7px 8px",fontWeight:600,color:t===selTj?"#0f6e56":"#1a1a18"}}>{t}</td>
+                      {OCJENE.map(x=>{
+                        const v=+o['o_'+x.k]||0;
+                        const c=v>=8?"#0f6e56":v>=5?"#ba7517":v>0?"#d85a30":"#ddd";
+                        return<td key={x.k} style={{padding:"7px 4px",textAlign:"center",fontWeight:v?600:400,color:c}}>{v||"—"}</td>;
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Dashboard tab ────────────────────────────────────────────────────────────
 function DashboardTab({nutrition,digestion,weight,setTab}){
   const tod=today();
@@ -2766,7 +3104,7 @@ export default function App(){
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"shopping",l:"Dućan",icon:"🛒"}];
+  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"shopping",l:"Dućan",icon:"🛒"},{id:"izvjestaj",l:"Izvještaj",icon:"📋"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
@@ -2781,6 +3119,7 @@ export default function App(){
       {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
       {tab==="strava"&&<StravaTab/>}
       {tab==="shopping"&&<ShoppingTab/>}
+      {tab==="izvjestaj"&&<IzvjestajTab/>}
     </>;
 
   return(
