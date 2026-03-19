@@ -925,9 +925,23 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
 
   const [apiResults,setApiResults]=useState([]);
   const [apiLoading,setApiLoading]=useState(false);
+  const [sheetFoods,setSheetFoods]=useState([]);
   const searchTimer=React.useRef(null);
-  const allFoods=[...BUILTIN_FOODS,...customFoods.map(cf=>({...cf,_custom:true}))];
-  const localFiltered=search.length>1?allFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())).slice(0,4):[];
+
+  // Load sheet foods on mount
+  useEffect(()=>{
+    loadSheetFoods().then(foods=>{
+      if(foods.length>0)setSheetFoods(foods);
+    });
+  },[]);
+
+  // Merge: sheet foods first, then custom, then builtin (as fallback for anything missing)
+  const allFoods=[
+    ...sheetFoods,
+    ...customFoods.map(cf=>({...cf,_custom:true})),
+    ...BUILTIN_FOODS.filter(b=>!sheetFoods.some(s=>s.name.toLowerCase()===b.name.toLowerCase())),
+  ];
+  const localFiltered=search.length>1?allFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())).slice(0,6):[];
 
   React.useEffect(()=>{
     if(search.length<2){setApiResults([]);setApiLoading(false);return;}
@@ -1054,6 +1068,7 @@ function NutritionTab({nutrition,customFoods,addNutrition,addCustomFood,removeNu
                     <span style={{wordBreak:"break-word"}}>{f.name}</span>
                     {f._custom&&<span style={{fontSize:10,color:"#854f0b",fontWeight:500,flexShrink:0}}>MOJ UNOS</span>}
                     {f._api&&<span style={{fontSize:10,color:"#185fa5",fontWeight:500,flexShrink:0}}>USDA</span>}
+                    {f._sheet&&<span style={{fontSize:10,color:"#0f6e56",fontWeight:500,flexShrink:0}}>SHEET</span>}
                   </div>
                   <div style={{fontSize:11,color:"#aaa"}}>{f._brand?f._brand+" · ":""}per {f.baseAmount||f.base_amount}{f.unit}</div>
                 </div>
@@ -1904,6 +1919,48 @@ function StravaTab(){
 
 // ─── Jelovnik tab ─────────────────────────────────────────────────────────────
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREKqksAild_k_mZsXTW_ynOJyHmlHSly4HVudBmUHJfnnPjYoNcwWbc9nPcQTbYKxcfIb2p9hkInm7/pub?gid=1876983105&single=true&output=csv";
+const NAMIRNICE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREKqksAild_k_mZsXTW_ynOJyHmlHSly4HVudBmUHJfnnPjYoNcwWbc9nPcQTbYKxcfIb2p9hkInm7/pub?gid=0&single=true&output=csv";
+
+// Cache for sheet foods
+let _sheetFoodsCache = null;
+let _sheetFoodsLoading = false;
+let _sheetFoodsCallbacks = [];
+
+async function loadSheetFoods() {
+  if (_sheetFoodsCache) return _sheetFoodsCache;
+  if (_sheetFoodsLoading) {
+    return new Promise(res => _sheetFoodsCallbacks.push(res));
+  }
+  _sheetFoodsLoading = true;
+  try {
+    const r = await fetch(NAMIRNICE_URL + "&t=" + Date.now());
+    const text = await r.text();
+    const lines = text.trim().split("\n");
+    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    const foods = lines.slice(1).map(line => {
+      const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = vals[i] || "");
+      return {
+        name: obj.name || "",
+        unit: obj.unit || "g",
+        baseAmount: +obj.baseamount || 100,
+        kcal: +obj.kcal || 0,
+        protein: +obj.protein || 0,
+        carbs: +obj.carbs || 0,
+        fat: +obj.fat || 0,
+        _sheet: true,
+      };
+    }).filter(f => f.name && f.kcal > 0);
+    _sheetFoodsCache = foods;
+    _sheetFoodsCallbacks.forEach(cb => cb(foods));
+    _sheetFoodsCallbacks = [];
+    return foods;
+  } catch(e) {
+    _sheetFoodsLoading = false;
+    return [];
+  }
+}
 
 // Namirnice iz Word dokumenta (lookup baza)
 const FOOD_DB = [
@@ -2110,14 +2167,15 @@ const FOOD_DB = [
   {name:"Soja umak",unit:"ml",baseAmount:15,kcal:9,protein:1.5,carbs:0.9,fat:0},
 ];
 
-function lookupFood(name){
+function lookupFood(name, sheetFoods=[]){
   if(!name)return null;
   const n=name.trim().toLowerCase();
+  const all=[...sheetFoods,...FOOD_DB];
   // exact match first
-  let f=FOOD_DB.find(x=>x.name.toLowerCase()===n);
+  let f=all.find(x=>x.name.toLowerCase()===n);
   if(f)return f;
   // partial match
-  f=FOOD_DB.find(x=>x.name.toLowerCase().includes(n)||n.includes(x.name.toLowerCase()));
+  f=all.find(x=>x.name.toLowerCase().includes(n)||n.includes(x.name.toLowerCase()));
   return f||null;
 }
 
@@ -2142,6 +2200,11 @@ function JelovnikTab({nutrition,addNutrition}){
   });
   const [selDate,setSelDate]=useState(today());
   const [lastFetch,setLastFetch]=useState(null);
+  const [sheetFoods,setSheetFoods]=useState([]);
+
+  useEffect(()=>{
+    loadSheetFoods().then(foods=>{if(foods.length>0)setSheetFoods(foods);});
+  },[]);
 
   function saveConfirmed(c){
     setConfirmed(c);
@@ -2179,7 +2242,7 @@ function JelovnikTab({nutrition,addNutrition}){
 
   // Calc totals for day
   const dayTotals=dayRows.reduce((acc,r)=>{
-    const food=lookupFood(r.name);
+    const food=lookupFood(r.name,sheetFoods);
     if(!food)return acc;
     const amt=parseFloat(r.amount)||food.baseAmount;
     const ratio=amt/food.baseAmount;
@@ -2192,7 +2255,7 @@ function JelovnikTab({nutrition,addNutrition}){
   },{kcal:0,protein:0,carbs:0,fat:0});
 
   async function confirm(row){
-    const food=lookupFood(row.name);
+    const food=lookupFood(row.name,sheetFoods);
     if(!food){alert(`Namirnica "${row.name}" nije pronađena u bazi.`);return;}
     const amt=parseFloat(row.amount)||food.baseAmount;
     const ratio=amt/food.baseAmount;
@@ -2298,7 +2361,7 @@ function JelovnikTab({nutrition,addNutrition}){
           </div>
           <div className="meal-bd">
             {meals[mealName].map((row,i)=>{
-              const food=lookupFood(row.name);
+              const food=lookupFood(row.name,sheetFoods);
               const amt=parseFloat(row.amount)||food?.baseAmount||0;
               const ratio=food?amt/food.baseAmount:0;
               const key=`${row.date}_${row.meal}_${row.name}`;
@@ -2330,6 +2393,143 @@ function JelovnikTab({nutrition,addNutrition}){
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+
+// ─── Shopping tab ─────────────────────────────────────────────────────────────
+function ShoppingTab(){
+  const [items,setItems]=useState(()=>{
+    try{return JSON.parse(localStorage.getItem("shopping_list")||"[]");}catch{return[];}
+  });
+  const [input,setInput]=useState("");
+  const [cat,setCat]=useState("Ostalo");
+  const inputRef=React.useRef(null);
+
+  const CATS=["Meso i riba","Mliječni","Voće","Povrće","Žitarice i kruh","Smrznuto","Konzerve","Pića","Suplementi","Ostalo"];
+  const CAT_ICONS={"Meso i riba":"🥩","Mliječni":"🥛","Voće":"🍎","Povrće":"🥦","Žitarice i kruh":"🍞","Smrznuto":"❄️","Konzerve":"🥫","Pića":"💧","Suplementi":"💊","Ostalo":"🛒"};
+
+  function save(list){setItems(list);try{localStorage.setItem("shopping_list",JSON.stringify(list));}catch{}}
+
+  function add(){
+    const name=input.trim();
+    if(!name)return;
+    const newItem={id:Date.now(),name,cat,bought:false};
+    save([...items,newItem]);
+    setInput("");
+    inputRef.current?.focus();
+  }
+
+  function toggle(id){save(items.map(i=>i.id===id?{...i,bought:!i.bought}:i));}
+  function remove(id){save(items.filter(i=>i.id!==id));}
+  function removeBought(){save(items.filter(i=>!i.bought));}
+  function clearAll(){if(window.confirm("Obriši cijeli popis?"))save([]);}
+
+  // Group by category, bought items at bottom
+  const notBought=items.filter(i=>!i.bought);
+  const bought=items.filter(i=>i.bought);
+  const grouped={};
+  notBought.forEach(i=>{if(!grouped[i.cat])grouped[i.cat]=[];grouped[i.cat].push(i);});
+
+  return(
+    <div>
+      {/* Input */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="ttl">Dodaj stavku</div>
+        <div style={{marginBottom:10}}>
+          <span className="lbl">Kategorija</span>
+          <div className="pills">
+            {CATS.map(c=>(
+              <button key={c} className={`pill${cat===c?" dk":""}`} style={{fontSize:12}} onClick={()=>setCat(c)}>
+                {CAT_ICONS[c]} {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <input
+            ref={inputRef}
+            className="inp"
+            placeholder="npr. Pileća prsa, Zobene pahuljice..."
+            value={input}
+            onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&add()}
+            style={{flex:1}}
+          />
+          <button className="btn btn-g" style={{width:56,padding:0,fontSize:20}} onClick={add}>+</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      {items.length>0&&(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,padding:"0 2px"}}>
+          <div style={{fontSize:13,color:"#888"}}>
+            <span style={{fontWeight:500,color:"#1a1a18"}}>{notBought.length}</span> preostalo
+            {bought.length>0&&<span style={{marginLeft:8,color:"#1d9e75"}}>· <span style={{fontWeight:500}}>{bought.length}</span> kupljeno</span>}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {bought.length>0&&(
+              <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,width:"auto"}} onClick={removeBought}>
+                Obriši kupljeno
+              </button>
+            )}
+            <button className="btn btn-ghost" style={{padding:"6px 12px",fontSize:12,width:"auto",color:"#d85a30",borderColor:"#fca5a5"}} onClick={clearAll}>
+              Obriši sve
+            </button>
+          </div>
+        </div>
+      )}
+
+      {items.length===0&&(
+        <div style={{textAlign:"center",padding:"60px 0",color:"#bbb",fontSize:14}}>
+          <div style={{fontSize:40,marginBottom:12}}>🛒</div>
+          Popis je prazan.<br/>Dodaj prvu stavku gore.
+        </div>
+      )}
+
+      {/* Not bought — grouped by category */}
+      {Object.keys(grouped).map(catName=>(
+        <div key={catName} style={{marginBottom:10}}>
+          <div style={{fontSize:11,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:".8px",padding:"0 2px",marginBottom:6}}>
+            {CAT_ICONS[catName]} {catName}
+          </div>
+          <div className="card" style={{padding:0,overflow:"hidden"}}>
+            {grouped[catName].map((item,i)=>(
+              <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:i<grouped[catName].length-1?"1px solid #f5f3ef":"none"}}>
+                <button
+                  onClick={()=>toggle(item.id)}
+                  style={{width:24,height:24,borderRadius:"50%",border:"2px solid #e8e5df",background:"none",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",WebkitTapHighlightColor:"transparent"}}
+                >
+                </button>
+                <span style={{flex:1,fontSize:15,color:"#1a1a18"}}>{item.name}</span>
+                <button className="rm" onClick={()=>remove(item.id)}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Bought items */}
+      {bought.length>0&&(
+        <div style={{marginTop:16}}>
+          <div style={{fontSize:11,fontWeight:600,color:"#bbb",textTransform:"uppercase",letterSpacing:".8px",padding:"0 2px",marginBottom:6}}>
+            ✓ Kupljeno ({bought.length})
+          </div>
+          <div className="card" style={{padding:0,overflow:"hidden"}}>
+            {bought.map((item,i)=>(
+              <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderBottom:i<bought.length-1?"1px solid #f5f3ef":"none",opacity:0.5}}>
+                <button
+                  onClick={()=>toggle(item.id)}
+                  style={{width:24,height:24,borderRadius:"50%",border:"2px solid #1d9e75",background:"#1d9e75",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,WebkitTapHighlightColor:"transparent"}}
+                >✓</button>
+                <span style={{flex:1,fontSize:15,color:"#aaa",textDecoration:"line-through"}}>{item.name}</span>
+                <button className="rm" onClick={()=>remove(item.id)}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2540,7 +2740,7 @@ export default function App(){
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"}];
+  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"stats",l:"Statistike",icon:"📊"},{id:"shopping",l:"Dućan",icon:"🛒"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
@@ -2554,6 +2754,7 @@ export default function App(){
       {tab==="weight"&&<WeightTab weight={weight} addWeight={addWeight} removeWeight={removeWeight}/>}
       {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
       {tab==="strava"&&<StravaTab/>}
+      {tab==="shopping"&&<ShoppingTab/>}
     </>;
 
   return(
