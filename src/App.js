@@ -2898,6 +2898,203 @@ function IzvjestajTab(){
   );
 }
 
+
+// ─── Privatno tab ─────────────────────────────────────────────────────────────
+const PRIVATE_PIN = "6891";
+const PRIVATE_UID_SUFFIX = "_private";
+
+function PrivatnoTab(){
+  const [unlocked,setUnlocked]=useState(()=>sessionStorage.getItem("privatno_unlocked")==="1");
+  const [pin,setPin]=useState("");
+  const [error,setError]=useState(false);
+  const [privateWeight,setPrivateWeight]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [selDate,setSelDate]=useState(today());
+  const [kg,setKg]=useState("");
+  const [notes,setNotes]=useState("");
+  const [saving,setSaving]=useState(false);
+
+  const PRIVATE_USER = "189bcf56-7374-4def-9790-9f20617601b2_p";
+
+  useEffect(()=>{
+    if(!unlocked)return;
+    setLoading(true);
+    sb.from("weight").select("*").eq("user_id",PRIVATE_USER).order("date",{ascending:true})
+      .then(({data})=>{setPrivateWeight(data||[]);setLoading(false);});
+  },[unlocked]);
+
+  function tryPin(){
+    if(pin===PRIVATE_PIN){
+      sessionStorage.setItem("privatno_unlocked","1");
+      setUnlocked(true);setError(false);
+    } else {
+      setError(true);setPin("");
+    }
+  }
+
+  function lock(){
+    sessionStorage.removeItem("privatno_unlocked");
+    setUnlocked(false);setPin("");
+  }
+
+  const existing=privateWeight.find(w=>w.date===selDate);
+  useEffect(()=>{
+    if(existing){setKg(String(existing.kg));setNotes(existing.notes||"");}
+    else{setKg("");setNotes("");}
+  },[selDate,privateWeight]);
+
+  async function submit(){
+    if(!kg||isNaN(+kg))return;
+    setSaving(true);
+    const ex=privateWeight.find(w=>w.date===selDate);
+    if(ex){
+      const{data:d}=await sb.from("weight").update({kg:+kg,notes}).eq("id",ex.id).select().single();
+      if(d)setPrivateWeight(p=>p.map(w=>w.id===ex.id?d:w).sort((a,b)=>a.date.localeCompare(b.date)));
+    }else{
+      const{data:d}=await sb.from("weight").insert({user_id:PRIVATE_USER,date:selDate,kg:+kg,notes:notes||null}).select().single();
+      if(d)setPrivateWeight(p=>[...p,d].sort((a,b)=>a.date.localeCompare(b.date)));
+    }
+    setSaving(false);
+  }
+
+  async function removeW(id){
+    await sb.from("weight").delete().eq("id",id);
+    setPrivateWeight(p=>p.filter(x=>x.id!==id));
+  }
+
+  // PIN screen
+  if(!unlocked){
+    return(
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:20}}>
+        <div style={{fontSize:40}}>🔒</div>
+        <div style={{fontFamily:"'Fraunces',serif",fontSize:22,fontWeight:300,color:"#1a1a18"}}>Privatno</div>
+        <div style={{fontSize:13,color:"#aaa"}}>Upiši 4-znamenkasti PIN</div>
+        <div style={{display:"flex",gap:10}}>
+          {[0,1,2,3].map(i=>(
+            <div key={i} style={{width:14,height:14,borderRadius:"50%",background:pin.length>i?"#1a1a18":"#e8e5df",transition:"background .15s"}}/>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,width:220}}>
+          {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+            <button key={i} onClick={()=>{
+              if(n==="⌫"){setPin(p=>p.slice(0,-1));setError(false);}
+              else if(n!==""){
+                const np=pin+n;
+                setPin(np);
+                setError(false);
+                if(np.length===4){
+                  if(np===PRIVATE_PIN){sessionStorage.setItem("privatno_unlocked","1");setUnlocked(true);}
+                  else{setError(true);setTimeout(()=>{setPin("");setError(false);},600);}
+                }
+              }
+            }}
+            style={{
+              height:60,borderRadius:14,border:"1.5px solid #e8e5df",
+              background:n===""?"transparent":"#fff",
+              fontSize:n==="⌫"?20:22,fontWeight:300,
+              cursor:n===""?"default":"pointer",
+              color:error?"#d85a30":"#1a1a18",
+              fontFamily:"'Fraunces',serif",
+              transition:"all .1s",
+              boxShadow:n!==""?"0 1px 3px rgba(0,0,0,.06)":"none",
+            }}>
+              {n}
+            </button>
+          ))}
+        </div>
+        {error&&<div style={{fontSize:13,color:"#d85a30",fontWeight:500}}>Pogrešan PIN</div>}
+      </div>
+    );
+  }
+
+  // Weight content (same as WeightTab but private data)
+  const sorted=privateWeight.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const latest=sorted[sorted.length-1];
+  const oldest=sorted[0];
+  const diff=latest&&oldest&&latest!==oldest?+(latest.kg-oldest.kg).toFixed(1):null;
+  const chartData=sorted.slice(-30).map(w=>({y:w.kg,label:fmtShort(w.date)}));
+  const dots=privateWeight.map(w=>w.date);
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div style={{fontFamily:"'Fraunces',serif",fontSize:20,fontWeight:300,color:"#1a1a18"}}>🔒 Privatno</div>
+        <button className="btn btn-ghost" style={{padding:"7px 14px",fontSize:12,width:"auto"}} onClick={lock}>Zaključaj</button>
+      </div>
+
+      <Cal val={selDate} onChange={setSelDate} dots={dots}/>
+
+      {latest&&(
+        <div className="mrow-2">
+          <div className="met">
+            <div className="met-l">Trenutna kilaža</div>
+            <div className="met-v" style={{color:"#0f6e56",fontSize:26}}>{latest.kg}<span className="met-u">kg</span></div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{fmtShort(latest.date)}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">{diff!==null?(diff>0?"Promjena (rast)":"Promjena (pad)"):"Početna kilaža"}</div>
+            <div className="met-v" style={{color:diff===null?"#888":diff>0?"#d85a30":"#0f6e56",fontSize:26}}>
+              {diff!==null?(diff>0?"+":"")+diff:oldest?.kg??"-"}<span className="met-u">kg</span>
+            </div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{diff!==null?`od ${fmtShort(oldest.date)}`:"početak"}</div>
+          </div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="ttl">{existing?"Uredi mjerenje":"Unesi kilažu"}</div>
+        <span className="lbl">Kilaža (kg)</span>
+        <input type="number" className="inp" inputMode="decimal" step="0.1" placeholder="npr. 65.0"
+          value={kg} onChange={e=>setKg(e.target.value)}
+          style={{fontSize:20,fontWeight:300,textAlign:"center",marginBottom:12}}/>
+        <span className="lbl">Bilješka (opcionalno)</span>
+        <input className="inp" placeholder="npr. Jutro, natašte" value={notes}
+          onChange={e=>setNotes(e.target.value)} style={{marginBottom:14}}/>
+        <button className="btn btn-g" style={{opacity:saving?0.6:1}} onClick={submit} disabled={saving}>
+          {saving?"Spremanje...":(existing?"Spremi promjenu":"Dodaj mjerenje")}
+        </button>
+      </div>
+
+      {chartData.length>=2&&(
+        <div className="card">
+          <div className="ttl">Graf kilaže</div>
+          <SvgLineChart data={chartData} color="#1d9e75"/>
+        </div>
+      )}
+
+      {loading&&<div style={{textAlign:"center",padding:"20px",color:"#bbb",fontSize:14}}>Učitavanje...</div>}
+
+      {sorted.length>0&&(
+        <div className="card">
+          <div className="ttl">Povijest mjerenja</div>
+          {sorted.slice().reverse().map((w,i,arr)=>{
+            const prev=arr[i+1];
+            const delta=prev?+(w.kg-prev.kg).toFixed(1):null;
+            return(
+              <div key={w.id} className="frow">
+                <div>
+                  <div style={{fontSize:14,fontWeight:500}}>{fmtLong(w.date)}</div>
+                  {w.notes&&<div style={{fontSize:12,color:"#888",marginTop:2}}>{w.notes}</div>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:16,fontWeight:300,fontFamily:"'Fraunces',serif"}}>{w.kg} <span style={{fontSize:12,color:"#aaa"}}>kg</span></div>
+                    {delta!==null&&<div style={{fontSize:11,color:delta>0?"#d85a30":delta<0?"#0f6e56":"#aaa"}}>{delta>0?"+":""}{delta} kg</div>}
+                  </div>
+                  <button className="rm" onClick={()=>removeW(w.id)}>×</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {!loading&&privateWeight.length===0&&(
+        <div style={{textAlign:"center",padding:"32px 0",color:"#bbb",fontSize:14}}>Još nema unesenih mjerenja.</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Dashboard tab ────────────────────────────────────────────────────────────
 function DashboardTab({nutrition,digestion,weight,setTab}){
   const tod=today();
@@ -3104,7 +3301,7 @@ export default function App(){
   const UID="189bcf56-7374-4def-9790-9f20617601b2";
   const {nutrition,digestion,customFoods,weight,loading,addNutrition,removeNutrition,updateNutrition,addDigestion,removeDigestion,addCustomFood,addWeight,removeWeight}=useData(UID);
 
-  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"shopping",l:"Dućan",icon:"🛒"},{id:"izvjestaj",l:"Izvještaj",icon:"📋"},{id:"stats",l:"Statistike",icon:"📊"}];
+  const tabs=[{id:"dashboard",l:"Danas",icon:"🏠"},{id:"jelovnik",l:"Jelovnik",icon:"📋"},{id:"nutrition",l:"Prehrana",icon:"🥗"},{id:"digestion",l:"Probava",icon:"🫁"},{id:"strava",l:"Trčanje",icon:"🏃"},{id:"weight",l:"Kilaža",icon:"⚖️"},{id:"shopping",l:"Dućan",icon:"🛒"},{id:"izvjestaj",l:"Izvještaj",icon:"📋"},{id:"privatno",l:"Privatno",icon:"🔒"},{id:"stats",l:"Statistike",icon:"📊"}];
   const activeTab=tabs.find(t=>t.id===tab);
 
   const tabContent=loading
@@ -3119,6 +3316,7 @@ export default function App(){
       {tab==="stats"&&<StatsTab nutrition={nutrition} digestion={digestion}/>}
       {tab==="strava"&&<StravaTab/>}
       {tab==="shopping"&&<ShoppingTab/>}
+      {tab==="privatno"&&<PrivatnoTab/>}
       {tab==="izvjestaj"&&<IzvjestajTab/>}
     </>;
 
