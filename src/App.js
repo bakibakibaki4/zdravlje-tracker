@@ -1486,6 +1486,8 @@ function WeightTab({weight,addWeight,removeWeight}){
   const latest=sorted[sorted.length-1];
   const oldest=sorted[0];
   const diff=latest&&oldest&&latest!==oldest?+(latest.kg-oldest.kg).toFixed(1):null;
+  const last7days=sorted.slice(-7);
+  const avg7=last7days.length>0?+(last7days.reduce((a,w)=>a+w.kg,0)/last7days.length).toFixed(1):null;
   const chartData=sorted.slice(-30).map(w=>({y:w.kg,label:fmtShort(w.date)}));
   const dots=weight.map(w=>w.date);
 
@@ -1494,15 +1496,20 @@ function WeightTab({weight,addWeight,removeWeight}){
       <Cal val={selDate} onChange={setSelDate} dots={dots}/>
 
       {latest&&(
-        <div className="mrow-2">
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
           <div className="met">
-            <div className="met-l">Trenutna kilaža</div>
-            <div className="met-v" style={{color:"#0f6e56",fontSize:26}}>{latest.kg}<span className="met-u">kg</span></div>
+            <div className="met-l">Trenutna</div>
+            <div className="met-v" style={{color:"#0f6e56",fontSize:22}}>{latest.kg}<span className="met-u">kg</span></div>
             <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{fmtShort(latest.date)}</div>
           </div>
           <div className="met">
-            <div className="met-l">{diff!==null?(diff>0?"Promjena (rast)":"Promjena (pad)"):"Početna kilaža"}</div>
-            <div className="met-v" style={{color:diff===null?"#888":diff>0?"#d85a30":"#0f6e56",fontSize:26}}>
+            <div className="met-l">Prosjek 7 dana</div>
+            <div className="met-v" style={{color:"#185fa5",fontSize:22}}>{avg7??"-"}<span className="met-u">kg</span></div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:3}}>zadnjih {last7days.length} mjerenja</div>
+          </div>
+          <div className="met">
+            <div className="met-l">{diff!==null?(diff>0?"Ukupno (rast)":"Ukupno (pad)"):"Početna"}</div>
+            <div className="met-v" style={{color:diff===null?"#888":diff>0?"#d85a30":"#0f6e56",fontSize:22}}>
               {diff!==null?(diff>0?"+":"")+diff:oldest?.kg??"-"}
               <span className="met-u">kg</span>
             </div>
@@ -3012,6 +3019,8 @@ function PrivatnoTab(){
   const latest=sorted[sorted.length-1];
   const oldest=sorted[0];
   const diff=latest&&oldest&&latest!==oldest?+(latest.kg-oldest.kg).toFixed(1):null;
+  const last7days=sorted.slice(-7);
+  const avg7=last7days.length>0?+(last7days.reduce((a,w)=>a+w.kg,0)/last7days.length).toFixed(1):null;
   const chartData=sorted.slice(-30).map(w=>({y:w.kg,label:fmtShort(w.date)}));
   const dots=privateWeight.map(w=>w.date);
 
@@ -3025,15 +3034,20 @@ function PrivatnoTab(){
       <Cal val={selDate} onChange={setSelDate} dots={dots}/>
 
       {latest&&(
-        <div className="mrow-2">
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
           <div className="met">
-            <div className="met-l">Trenutna kilaža</div>
-            <div className="met-v" style={{color:"#0f6e56",fontSize:26}}>{latest.kg}<span className="met-u">kg</span></div>
+            <div className="met-l">Trenutna</div>
+            <div className="met-v" style={{color:"#0f6e56",fontSize:22}}>{latest.kg}<span className="met-u">kg</span></div>
             <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{fmtShort(latest.date)}</div>
           </div>
           <div className="met">
-            <div className="met-l">{diff!==null?(diff>0?"Promjena (rast)":"Promjena (pad)"):"Početna kilaža"}</div>
-            <div className="met-v" style={{color:diff===null?"#888":diff>0?"#d85a30":"#0f6e56",fontSize:26}}>
+            <div className="met-l">Prosjek 7 dana</div>
+            <div className="met-v" style={{color:"#185fa5",fontSize:22}}>{avg7??"-"}<span className="met-u">kg</span></div>
+            <div style={{fontSize:11,color:"#aaa",marginTop:3}}>zadnjih {last7days.length} mjerenja</div>
+          </div>
+          <div className="met">
+            <div className="met-l">{diff!==null?(diff>0?"Ukupno (rast)":"Ukupno (pad)"):"Početna"}</div>
+            <div className="met-v" style={{color:diff===null?"#888":diff>0?"#d85a30":"#0f6e56",fontSize:22}}>
               {diff!==null?(diff>0?"+":"")+diff:oldest?.kg??"-"}<span className="met-u">kg</span>
             </div>
             <div style={{fontSize:11,color:"#aaa",marginTop:3}}>{diff!==null?`od ${fmtShort(oldest.date)}`:"početak"}</div>
