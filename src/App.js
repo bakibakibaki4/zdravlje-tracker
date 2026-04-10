@@ -2914,12 +2914,12 @@ function PrivatnoTab(){
   const [notes,setNotes]=useState("");
   const [saving,setSaving]=useState(false);
 
-  const PRIVATE_USER = "189bcf56-7374-4def-9790-9f20617601b2_p";
+  const PRIVATE_USER = "189bcf56-7374-4def-9790-9f20617601b2";
 
   useEffect(()=>{
     if(!unlocked)return;
     setLoading(true);
-    sb.from("weight").select("*").eq("user_id",PRIVATE_USER).order("date",{ascending:true})
+    sb.from("weight_private").select("*").eq("user_id",PRIVATE_USER).order("date",{ascending:true})
       .then(({data})=>{setPrivateWeight(data||[]);setLoading(false);});
   },[unlocked]);
 
@@ -2948,17 +2948,17 @@ function PrivatnoTab(){
     setSaving(true);
     const ex=privateWeight.find(w=>w.date===selDate);
     if(ex){
-      const{data:d}=await sb.from("weight").update({kg:+kg,notes}).eq("id",ex.id).select().single();
+      const{data:d}=await sb.from("weight_private").update({kg:+kg,notes}).eq("id",ex.id).select().single();
       if(d)setPrivateWeight(p=>p.map(w=>w.id===ex.id?d:w).sort((a,b)=>a.date.localeCompare(b.date)));
     }else{
-      const{data:d}=await sb.from("weight").insert({user_id:PRIVATE_USER,date:selDate,kg:+kg,notes:notes||null}).select().single();
+      const{data:d}=await sb.from("weight_private").insert({user_id:PRIVATE_USER,date:selDate,kg:+kg,notes:notes||null}).select().single();
       if(d)setPrivateWeight(p=>[...p,d].sort((a,b)=>a.date.localeCompare(b.date)));
     }
     setSaving(false);
   }
 
   async function removeW(id){
-    await sb.from("weight").delete().eq("id",id);
+    await sb.from("weight_private").delete().eq("id",id);
     setPrivateWeight(p=>p.filter(x=>x.id!==id));
   }
 
